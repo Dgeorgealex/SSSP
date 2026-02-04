@@ -1,0 +1,233 @@
+main.cpp
+    Usage: ./Main [config1=value1 config2=value2 ...] <queries_file> [<output_file>]
+        - No output file = stdout
+
+    Queries are read from a file
+        Ex: simple.txt
+            problem-time/check-alg-graph-source-iters
+            SSSP check BCF ../data/graphs/rand-rest-hard-400.txt 0
+            NegCycle check NaiveBFM ../data/graphs/simple1.txt
+                check = do the algorithm
+                time = run the algorithm iters time and get time statistics
+        Can contain:
+            std::vector<QueryData> data; = variant<SSSPData, NegCycleData>
+                SSSPData - (graph_filename, source, algorithm, iters)
+                NegCycleData - (graph_filename, algorithm, iters)
+
+            unordered_map<string, Graph> graphs
+
+            Result = variant<optional<Distances>, bool, ExpTime>
+                    Distances is optional because cycle returns {}
+
+
+            And the queries are run
+
+algorithms.cpp
+    SSSPAlg / NegCycleAlg
+
+    BCF:
+        Initial Decomposition into SCC
+        For each SCC runAlg
+        FixDagEdges
+        Do final Dijkstra
+BCF
+    runMainAlgorithm
+        As in normal paper but with the following mentions:
+            diameter approximation
+            brut
+
+            CutEdges123(Half)
+            decomposeIntoSSC - Obs: here are the nodes activated
+            recurse
+                runAlgorithm
+            fixDagEdges
+            AddCutEdges
+
+
+    A lot of Dijkstra implemented. Always on G>=0
+
+    RunLazyDijkstra -> can be run with source or with potentials
+
+
+    config.h:
+        extern int use_lazy;      // 0 -> use GOR, 1 -> use LazyDijkstra //
+                - This is used in runMainAlg
+                    - In the case of bruteforce
+                    - In the case of adding edges from the cut
+
+        int init_kappa = 0;  // 0 -> use number of nodes, 1 -> use infinity
+                - Pretty self-explanatory => It is used for the initial kappa in the decomposition (IDK you would want to use infinity)
+
+        int k_factor = 1;  // by what factor to reduce the number of Dijkstra calls
+                - Used in labelInLight to reduce the number of samples of nodes. There should be 5*eps^(-2)*log(n) samples. In implementation eps = 0.1
+                    (Lemma 52)
+
+        int rand_label = 0;  // 0 -> label light nodes with Dijkstra, 1 -> label light nodes randomly
+                - Also used in labelInLight 50/50 be light
+
+        int fixdagedges = 1;  // 1 -> normal fixdagedges version, 2 -> old fixdagedges version
+                - Used Only in runMainAlg (fixdagedges is also used in BFC)
+                - 1 = The one with the minimum edge i * min_w
+                - 2 = The classic one
+
+        int cutedges = 1;  // 1 -> normal cutedges version, 2 -> new cutedges version, 3 -> cut edges in half, 4 -> newer cutedges version
+                - Also getBalls123
+                    - 1 = getBalls returns unordered_set<int> with nodes
+                    - 2 = getBalls does Dijkstra and removes edges automatically
+                    - 3 = Just Cut In Half
+                    - 4 = ?
+                    - 5 = returns a vector and modifies a frequency vector
+
+        int diam_apprx = 0;  // 0 -> normal, 1 -> approximate diameter
+                - Also self-explanatory -> But the algorithm does not do the k/2
+
+Sources of Randomness:
+    Sampling Ball radius for Light Vertices in CutEdges123  - Objective: Have the guarantee that P united CUT = O(log n)
+                                                                         <= 3/4n - these are components resulted from balls
+                                                                         - k/2 - components with heavy nodes (small distances)
+    Number of Samples to find Light Nodes w.h.p in labelInLight - Objective: Find Nodes v with B(v, k/4) <= 7/10n in G>=0
+
+
+
+
+
+PAD(G) -> optional<Distances>                           call the main algorithm after decomposition
+decomposeIntoSCCs(G)-> vector<Graph>
+
+runMainAlg(G, d) -> optional<Distances>                 runs the main algorithm from Jason Li Paper
+              - upper bound for weak diameter
+
+
+Important Configurable Parameters:
+    k = the number of rounds of BellmanDijkstra
+    eps = ratio between vol(padding - U) / vol(U) = 1/alpha; In paper alpha = log(n)
+
+
+PAD(Graph G) {
+    Initial step: Multiply the positive edges G with 2, such that Lemma 9 from Jason Li holds
+
+    SCC = decomposeIntoSCCs(G)
+
+    for (auto s : SCC)
+        phi = RumMainAlg(s, infinity)
+
+    fixDagEdges(G, SCC, phi);
+
+    computeDistances();
+}
+
+runMainAlg(G, d)                               // Input = graph of weak diameter d in G>=0
+
+    d_approx = get a 2-aprox of diameter(G)
+
+    d = min(d, d_approx)
+
+    if(d small) {
+        phi = runBellmanDijkstra(G, d iterations)       // If more than d negative edges => negative cycle
+        return phi;
+    }
+
+    if(G small){
+        phi = runBellmanDijkstra(G, n iterations)       // Maybe has cycle
+        return phi;
+    }
+
+    X = runPaddedDecomposition(G, d)
+    k = X.size()
+
+    for (i = 0; i < k ; i++) {
+        if( X[i] from heavy_case )                               // The only case where the weak diameter decreases
+            runMainAlg(X[i], d/2)
+
+        else {
+            SCC = decomposeIntoSCCs(X[i])
+
+            for (auto s : SCC)
+                phi = RumMainAlg(s, d)
+
+            fixDagEdges(X[i], SCC, phi);
+        }
+
+    create H as in Jason Li Paper                                  (2m + O(eps m) edges)
+
+    phi = runBellmanDijkstra(H, k iterations)                   // If more than k iterations we have cycle: Lemma 9
+
+    return phi;
+
+
+
+runPaddedDecomposition(G, d)                                parameters = k, eps; Graph with non-negative edges
+
+    Obs: To have k iterations, the padding must be d/k
+
+Light Case:
+
+     U_plus, U_minus = {}
+
+     while( vol(U_plus) <= m/2 && vol(U_minus) <= m/2 )
+    {
+        Take s in V \ (U_plus U U_minus);
+
+        Do for both IN and OUT:
+                FOR OUT: run ot G \ U_plus
+                FOR IN: run or G \ U_minus
+
+
+        LIGHT CASE:
+
+                                   d/k
+                                <--------->
+
+            s . . . . . . . . . . . | . . . . . | . . | . . . . . . . . . . . . . . . . . .
+        dist=                      d/10              d/5
+        vol =                                   m
+
+        Find r <= d/10 such that:
+            Ball(s, r + d/k) / Ball(s, r) <= (1 + aps) (constant) or minimum                    (Two pointers + simultaneously)
+            vol(Ball(s, r)) < m
+            U = U + Ball(s, r)
+
+
+        OTHERWISE -> GO TO HEAVY
+    }
+
+    U = either U_plus or U_minus    (whichever has bigger volume)
+
+    vol(U) <= 3m/2
+    vol(V - U) <= 3m/2
+    Vol(U + padding) <= (1 + eps) * 3m/2
+
+    X = V - U           vol(X) <= 1.5m
+    Y = U + Padding     vol(Y) <= (1 + eps) * 1.5m  => Ok if eps <= 0.33 (the smaller the better for #edges in recursion)
+
+
+
+
+HEAVY CASE:
+                                                   d/k
+                                                <--------->
+
+        s . . . . . . . | . . . . | . . . . . . . | . . . . . . . . . . . . . . . . . .
+    dist=                        d/10            d/5
+    vol =               m
+
+    vol(Ball(s, d/10)) >= m           (This happens for both IN and OUT) directions
+
+    Find d/10 <= r <= d/5 such that:
+            Ball(s, r+d/k) / Ball(s, r) <= (1 + eps) or minimum
+
+
+        X = Ball_IN(s, r+d/k) intersect Ball_OUT(s, r+d/k)
+
+            diam of X (u -> v)
+                u -> s = d/5 + d/k
+                s -> v = d/5 + d/k
+
+                u -> v < 2d/5 + 2d/k < d/2
+
+        Y = Ball_OUT(s, r+d/k) \ B_IN(s, r)                                             <= vol(B_IN(s,r)) >= m
+        Z = V \ B_OUT(s, r)                                                             <= vol(V_OUT(s, r)) >= m
+
+        diam(X) <= d/2
+        vol(Y) <= m
+        vol(Z) <= m

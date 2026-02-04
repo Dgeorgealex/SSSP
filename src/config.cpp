@@ -66,6 +66,10 @@ namespace config {
     int ol_seed = 1234;  // out light labeling seed
     int il_seed = 12134;  // in light labeling seed
     int eg_sort_scc = 0;  // 0 -> no edge sorting during SCC, 1 -> edge sorting during SCC
+
+    int small = 0;
+    int rounds = 10;
+    long long alpha = 2;
     std::string shift_filename = std::string();
 
     int setup_config(int argc, char** argv) {

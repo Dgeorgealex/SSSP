@@ -44,6 +44,8 @@ add_library(Library
 	src/gor.cpp
 	src/config.cpp
 	src/config.h
+	src/pad.h
+	src/pad.cpp
 )
 
 add_executable(Main src/main.cpp)

@@ -52,8 +52,8 @@ class SSSPAlg {
 
 Distances runDijkstra(const Graph& graph, NodeID source, Distance dist_bound = c::infty, Orientation orientation = Orientation::OUT);
 
-std::optional<Distances> runLazyDijkstra(const Graph& graph, const Distances& potential, Orientation orientation = Orientation::OUT);
-std::optional<Distances> runLazyDijkstra(const Graph& graph, NodeID source, Orientation orientation = Orientation::OUT);
+std::optional<Distances> runLazyDijkstra(const Graph& graph, const Distances& potential, Orientation orientation = Orientation::OUT, int max_rounds = -1);
+std::optional<Distances> runLazyDijkstra(const Graph& graph, NodeID source, Orientation orientation = Orientation::OUT, int max_rounds = -1);
 
 void fixDagEdges(const Graph& graph, const std::vector<Graph>& components, Distances& potential);
 void fixDagEdges2(const Graph& graph, const std::vector<Graph>& components, Distances& potential);

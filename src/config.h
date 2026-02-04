@@ -17,5 +17,10 @@ namespace config {
     extern int eg_sort_scc;   // 0 -> no edge sorting during SCC, 1 -> edge sorting during SCC xx check on my own
     extern std::string shift_filename;  // name of shifted graph
 
+
+    // For PADDED Decomposition
+    extern int small;
+    extern int rounds;
+    extern long long alpha;
     int setup_config(int argc, char** argv);
 }

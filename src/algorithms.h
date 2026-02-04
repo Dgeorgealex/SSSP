@@ -25,7 +25,8 @@ enum class SSSPAlg {
     BCF,
     GOR,
     BFCT,
-    LazyD
+    LazyD,
+    PAD
 };
 SSSPAlg toSSSPAlg(std::string const& alg_string);
 std::string to_string(SSSPAlg const& alg);

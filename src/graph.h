@@ -99,6 +99,7 @@ class Graph {
     NodeID numberOfNodes() const;
     EdgeID numberOfEdges() const;
 
+    EdgeID getDegreeOf(NodeID source, Orientation orientation = Orientation::OUT) const;
     EdgeRange getEdgesOf(NodeID source) const;
     EdgeRange getEdgesOf(NodeID source, Orientation orientation) const;
 

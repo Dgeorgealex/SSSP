@@ -80,7 +80,7 @@ Distances bcf::runDijkstra(const Graph& graph, NodeID source, Distance dist_boun
 
 // runs lazy dijkstra from a virtual source connected to every other vtx with 0-edge weights
 // the weights of the graph are adjusted by this potential
-std::optional<Distances> runLazyDijkstra(const Graph& graph, std::variant<NodeID, const Distances*> source_pot, Orientation orientation) {
+std::optional<Distances> runLazyDijkstra(const Graph& graph, std::variant<NodeID, const Distances*> source_pot, Orientation orientation, int max_rounds = -1) {
     // initialize distances
     Distances distances(graph.numberOfNodes(), c::infty);
     const Distances *potential;
@@ -106,6 +106,10 @@ std::optional<Distances> runLazyDijkstra(const Graph& graph, std::variant<NodeID
 
     while (!q.empty()) {
         rounds++;
+
+        if (max_rounds == rounds)
+            return {};
+
         std::vector<NodeID> bellman_phase;
 
         // Run dijkstra phase on edges with w(e) >= 0
@@ -169,12 +173,12 @@ std::optional<Distances> runLazyDijkstra(const Graph& graph, std::variant<NodeID
     return distances;
 }
 
-std::optional<Distances> bcf::runLazyDijkstra(const Graph& graph, const Distances& potential, Orientation orientation) {
-    return runLazyDijkstra(graph, std::variant<NodeID, const Distances*>(&potential), orientation);
+std::optional<Distances> bcf::runLazyDijkstra(const Graph& graph, const Distances& potential, Orientation orientation, int max_rounds) {
+    return runLazyDijkstra(graph, std::variant<NodeID, const Distances*>(&potential), orientation, max_rounds);
 }
 
-std::optional<Distances> bcf::runLazyDijkstra(const Graph& graph, NodeID source, Orientation orientation) {
-    return runLazyDijkstra(graph, std::variant<NodeID, const Distances*>(source), orientation);
+std::optional<Distances> bcf::runLazyDijkstra(const Graph& graph, NodeID source, Orientation orientation, int max_rounds) {
+    return runLazyDijkstra(graph, std::variant<NodeID, const Distances*>(source), orientation, max_rounds);
 }
 
 void bcf::SSSPAlg::cutEdges(Graph& graph, Distance kappa, int seed) {

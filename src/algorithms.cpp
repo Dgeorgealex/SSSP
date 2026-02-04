@@ -8,6 +8,8 @@
 #include <list>
 #include <optional>
 
+#include "pad.h"
+
 SSSPAlg toSSSPAlg(std::string const& alg_string) {
     if (alg_string == "NaiveBFM") {
         return SSSPAlg::NaiveBFM;
@@ -21,6 +23,8 @@ SSSPAlg toSSSPAlg(std::string const& alg_string) {
         return SSSPAlg::BFCT;
     } else if (alg_string == "LazyD") {
         return SSSPAlg::LazyD;
+    } else if (alg_string == "PAD") {
+        return SSSPAlg::PAD;
     } else {
         ERROR("Unknown SSSP algorithm string: " << alg_string);
     }
@@ -235,6 +239,60 @@ std::optional<Distances> BCF(Graph& graph, NodeID source) {
     return distances;
 }
 
+std::optional<Distances> PAD(Graph &graph, NodeID source) {
+    auto alg = pad::PADAlg();
+    const NodeID n = graph.numberOfNodes();
+
+    Distances potential(n);
+
+    // Split into SCC
+    auto components = decomposeIntoSCCs(graph);
+
+    for (auto &component: components) {
+        auto opt_component_potential = alg.runMainAlg(component, c::infty);
+
+        if (!opt_component_potential.has_value())  // Found a cycle
+            return {};
+
+        auto component_potential = std::move(opt_component_potential.value());
+
+        for (NodeID i = 0; i < component.numberOfNodes(); i++)
+            potential[component.global_id[i]] = component_potential[i];
+     }
+
+    bcf::fixDagEdges(graph, components, potential);
+
+    // run Dijkstra
+    Distances distances(n, c::infty);
+    distances[source] = 0;
+    AddressableKHeap<4, NodeID, Distance> q(n);
+    q.insert(source, 0);
+
+    while (!q.empty()) {
+        Distance dist;
+        NodeID from;
+        q.deleteMin(from, dist);
+        if (dist > distances[from]) continue;
+        for (auto const& edge : graph.getEdgesOf(from)) {
+            auto pot_edge_w = edge.weight + potential[from] - potential[edge.target];
+            assert(pot_edge_w >= 0);
+            auto tentative_dist = distances[from] + pot_edge_w;
+            if (tentative_dist < distances[edge.target]) {
+                distances[edge.target] = tentative_dist;
+                q.insert(edge.target, tentative_dist);
+            }
+        }
+    }
+
+    // set all nodes and edges to active
+    graph.restoreGraph();
+    for (NodeID i = 0; i < n; i++) {
+        if (distances[i] != c::infty)
+            distances[i] = distances[i] + potential[i] - potential[source];
+    }
+
+    return distances;
+}
 // Algorithm as described in Section 5.1 of CGGTW paper.
 std::optional<Distances> BFCT(Graph const& graph, NodeID source) {
     class ShopaTree
@@ -380,6 +438,8 @@ std::optional<Distances> computeSSSP(
             return BFCT(graph, source);
         case SSSPAlg::LazyD:
             return bcf::runLazyDijkstra(graph, source);
+        case SSSPAlg::PAD:
+            return PAD(graph, source);
         default:
             ERROR("Unknown algorithm.");
     };
