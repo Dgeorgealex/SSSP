@@ -36,7 +36,7 @@ EdgeID grow_ball(const Distance new_d, int &start, const int end, const std::vec
         return 0;
 
     while (d[order[start]] + delta < new_d) {
-        if (start == end) // this means that
+        if (start == end) // this means that no padding
             return vol[start];
 
         if (d[order[start]] != d[order[start + 1]]) {
@@ -128,7 +128,7 @@ std::pair<int, int> grow_ball_heavy(const Graph &graph, Distance diameter, std::
 }
 
 std::vector<Graph> padded_decomposition_heavy(const Graph &graph, Distance diameter, NodeID s) {
-    // under d/10 I found a ball
+    // under d/10 I found a ball of big volume
     PRINT("HEAVY");
     NodeID n = graph.numberOfNodes();
 
@@ -312,7 +312,7 @@ std::vector<Graph> padded_decomposition(Graph &graph, Distance diameter) {
 
         if (ball_plus <= ball_minus) {
             vol_u_plus += ball_plus;
-            // update u_plus and padding vectors clearly the thing goes until start
+            // update u_plus and padding vectors
             for (int i = 0; i <= start_plus; i++) {
                 u_plus[order_plus[i]] = true;
                 pad_plus[order_plus[i]] = true;
@@ -411,7 +411,7 @@ std::optional<Distances> pad::PADAlg::runMainAlg(Graph &graph, Distance diameter
 
 
     Distances phi(H_n);
-    std::vector <std::vector<NodeID>> membership(n);
+    std::vector<std::vector<NodeID> > membership(n);
     std::vector<NodeID> global_id(H_n);
     std::vector<NodeID> aux_n(X.size(), 0);
 
@@ -466,13 +466,13 @@ std::optional<Distances> pad::PADAlg::runMainAlg(Graph &graph, Distance diameter
 
     //PRINT("Creating H");
     std::vector<FullEdge> e;
-    for (int i=0; i<n; i++) {
+    for (int i = 0; i < n; i++) {
         if (membership[i].size() != 1) {
             PRINT("HAS PADDING");
         }
-        for (auto edge : graph.getEdgesOf(i))
-            for (auto u : membership[i])
-                for (auto v : membership[edge.target])
+        for (auto edge: graph.getEdgesOf(i))
+            for (auto u: membership[i])
+                for (auto v: membership[edge.target])
                     e.emplace_back(u, v, edge.weight);
     }
     // Put the potentials from anything
@@ -489,10 +489,12 @@ std::optional<Distances> pad::PADAlg::runMainAlg(Graph &graph, Distance diameter
         potential[global_id[i]] = H_potential[i] + phi[i];
 
     for (NodeID from = 0; from < graph.numberOfNodes(); from++) {
-        for (auto const& edge : graph.getEdgesOf(from)) {
+        for (auto const &edge: graph.getEdgesOf(from)) {
             auto pot_edge_w = edge.weight + potential[from] - potential[edge.target];
-            if (pot_edge_w < 0)
-                PRINT("WHAT?");
+            if (pot_edge_w < 0) {
+                PRINT("SUPER BAD!!!");
+                exit(-1);
+            }
         }
     }
     return potential;

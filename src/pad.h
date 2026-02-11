@@ -21,9 +21,9 @@ namespace pad {
     };
 } // pad
 
-EdgeID grow_ball(const Distance new_d, int &start, const int end, const std::vector<Distance> &d,
+EdgeID grow_ball(Distance new_d, int &start, int end, const std::vector<Distance> &d,
                  const std::vector<NodeID> &order,
-                 const std::vector<EdgeID> &vol, const Distance diameter);
+                 const std::vector<EdgeID> &vol, Distance diameter);
 
 std::vector<Graph> padded_decomposition(Graph &graph, Distance diameter);
 
