@@ -6,7 +6,7 @@
 #define NEGATIVEWEIGHTSHORTESTPATH_PAD_H
 
 #include <optional>
-
+#include "defs.h"
 #include "graph.h"
 #include "heap.h"
 
@@ -27,7 +27,7 @@ EdgeID grow_ball(const Distance new_d, int &start, const int end, const std::vec
 
 std::vector<Graph> padded_decomposition(Graph &graph, Distance diameter);
 
-std::pair<int, int> grow_ball_heavy(const Graph &graph, Distance diameter, std::vector<NodeID> order, NodeID s,
+std::pair<int, int> grow_ball_heavy(const Graph &graph, Distance diameter, std::vector<NodeID> &order, NodeID s,
                                     Orientation orientation);
 
 std::vector<Graph> padded_decomposition_heavy(const Graph &graph, Distance diameter, NodeID s);

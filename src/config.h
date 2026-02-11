@@ -19,7 +19,6 @@ namespace config {
 
 
     // For PADDED Decomposition
-    extern int small;
     extern int rounds;
     extern long long alpha;
     int setup_config(int argc, char** argv);

@@ -249,6 +249,8 @@ std::optional<Distances> PAD(Graph &graph, NodeID source) {
     auto components = decomposeIntoSCCs(graph);
 
     for (auto &component: components) {
+        // ADD here the (n * m) upper bound on the diameter
+        // NodeID n = component.numberOfNodes(); EdgeID m = component.numberOfEdges();
         auto opt_component_potential = alg.runMainAlg(component, c::infty);
 
         if (!opt_component_potential.has_value())  // Found a cycle

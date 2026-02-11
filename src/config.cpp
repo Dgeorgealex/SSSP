@@ -59,17 +59,16 @@ namespace config {
     int k_factor = 1;  // by what factor to reduce the number of Dijkstra calls
     int rand_label = 0;  // 0 -> label light nodes with Dijkstra, 1 -> label light nodes randomly
     int fixdagedges = 1;  // 1 -> normal fixdagedges version, 2 -> old fixdagedges version
-    int cutedges = 1;  // 1 -> normal cutedges version, 2 -> new cutedges version, 3 -> cut edges in half, 4 -> newer cutedges version
+    int cutedges = 5;  // 1 -> normal cutedges version, 2 -> new cutedges version, 3 -> cut edges in half, 4 -> newer cutedges version
     int rec_limit = 100;  // recursion limit
     int cutedgesseed = 1234;  // cut edges seed
-    int diam_apprx = 0;  // 0 -> normal, 1 -> approximate diameter
+    int diam_apprx = 1;  // 0 -> normal, 1 -> approximate diameter
     int ol_seed = 1234;  // out light labeling seed
     int il_seed = 12134;  // in light labeling seed
     int eg_sort_scc = 0;  // 0 -> no edge sorting during SCC, 1 -> edge sorting during SCC
 
-    int small = 0;
-    int rounds = 10;
-    long long alpha = 2;
+    int rounds = 700;
+    long long alpha = 3;
     std::string shift_filename = std::string();
 
     int setup_config(int argc, char** argv) {

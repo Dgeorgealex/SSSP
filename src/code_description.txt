@@ -155,6 +155,8 @@ runMainAlg(G, d)                               // Input = graph of weak diameter
     return phi;
 
 
+!!!!!!!!! ONLY WORKS ON RESTRICTED GRAPHS !!!!!!!!! - because of the minimum cycle mean >= 1 property
+
 
 runPaddedDecomposition(G, d)                                parameters = k, eps; Graph with non-negative edges
 
