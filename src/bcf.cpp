@@ -169,7 +169,8 @@ std::optional<Distances> runLazyDijkstra(const Graph& graph, std::variant<NodeID
             }
         }
     }
-    // PRINT("rounds of lazy dijkstra: " << rounds);
+    if (rounds > 1)
+        PRINT("    rounds of lazy dijkstra: " << rounds);
     return distances;
 }
 
@@ -580,9 +581,8 @@ void bcf::SSSPAlg::cutEdgesInHalf(Graph& graph) {
 
 std::optional<Distances> bcf::SSSPAlg::runMainAlg(Graph& graph, Distance kappa, int level) {
 // std::optional<Distances> bcf::SSSPAlg::runMainAlg(Graph& graph, NodeID kappa, int level) {
-    DEBUG("recursion level: " << level);
     const NodeID n = graph.numberOfNodes();
-
+    const EdgeID m = graph.numberOfEdges();
     bool small_graph_size = (static_cast<NodeID>(kappa) + n) <= 300;
 
     // Skip diameter approximation if the graph is already small
@@ -624,6 +624,8 @@ std::optional<Distances> bcf::SSSPAlg::runMainAlg(Graph& graph, Distance kappa, 
         return opt_d;
     }
 
+    PRINT("recursion level: " << level);
+    PRINT("BCF ON: n = " << n << ", m = " << m << ", kappa = " << kappa);
     if (level == 0) MEASUREMENT::start(EXP::CUT_EDGES);
     // TODO: now we have the random seed fixed, maybe test variance?
     if (config::cutedges == 1) {

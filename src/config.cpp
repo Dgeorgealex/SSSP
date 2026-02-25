@@ -56,7 +56,7 @@ std::pair<std::string, std::string> parseString(const std::string& input) {
 namespace config {
     int use_lazy = 1;  // 0 -> use GOR, 1 -> use LazyDijkstra
     int init_kappa = 0;  // 0 -> use number of nodes, 1 -> use infinity
-    int k_factor = 1;  // by what factor to reduce the number of Dijkstra calls
+    int k_factor = 40;  // by what factor to reduce the number of Dijkstra calls
     int rand_label = 0;  // 0 -> label light nodes with Dijkstra, 1 -> label light nodes randomly
     int fixdagedges = 1;  // 1 -> normal fixdagedges version, 2 -> old fixdagedges version
     int cutedges = 5;  // 1 -> normal cutedges version, 2 -> new cutedges version, 3 -> cut edges in half, 4 -> newer cutedges version
@@ -67,8 +67,11 @@ namespace config {
     int il_seed = 12134;  // in light labeling seed
     int eg_sort_scc = 0;  // 0 -> no edge sorting during SCC, 1 -> edge sorting during SCC
 
-    int rounds = 700;
-    long long alpha = 3;
+    int pad_small = 500;
+    int pad_rounds = 1500;       // Number of LazyDijkstra rounds -> used for restricted graph detection
+    long long pad_alpha = 8;    // Padding ratio
+    int pad_use_lazy = 1;   // 0 -> use GOR, 1 -> use LazyDijkstra
+
     std::string shift_filename = std::string();
 
     int setup_config(int argc, char** argv) {

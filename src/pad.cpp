@@ -30,7 +30,7 @@ Graph get_new_graph(const Graph &graph, const std::vector<bool> &u) {
 EdgeID grow_ball(const Distance new_d, int &start, const int end, const std::vector<Distance> &d,
                  const std::vector<NodeID> &order,
                  const std::vector<EdgeID> &vol, const Distance diameter) {
-    const Distance delta = diameter / config::rounds;
+    const Distance delta = diameter / config::pad_rounds;
 
     if (new_d == d[order[end]])
         return 0;
@@ -41,7 +41,7 @@ EdgeID grow_ball(const Distance new_d, int &start, const int end, const std::vec
 
         if (d[order[start]] != d[order[start + 1]]) {
             // included everything in ball
-            if ((config::alpha + 1) + vol[start] >= config::alpha * vol[end])
+            if ((config::pad_alpha + 1) * vol[start] >= config::pad_alpha * vol[end])
                 return vol[start];
         }
 
@@ -61,7 +61,7 @@ std::pair<int, int> grow_ball_heavy(const Graph &graph, Distance diameter, std::
 
     d[s] = 0;
     order[0] = s;
-    volumes[0] = graph.getDegreeOf(s, orientation);
+    volumes[0] = graph.getDegreeOf(s);
 
     q.insert(s, 0);
 
@@ -76,7 +76,7 @@ std::pair<int, int> grow_ball_heavy(const Graph &graph, Distance diameter, std::
         start++;
         end++;
         order[end] = from;
-        volumes[end] = volumes[end - 1] + graph.getDegreeOf(from, orientation);
+        volumes[end] = volumes[end - 1] + graph.getDegreeOf(from);
 
         // Dijkstra normal graph
         for (auto const &edge: graph.getEdgesOf(from, orientation)) {
@@ -105,7 +105,7 @@ std::pair<int, int> grow_ball_heavy(const Graph &graph, Distance diameter, std::
 
         end++;
         order[end] = from;
-        volumes[end] = volumes[end - 1] + graph.getDegreeOf(from, orientation);
+        volumes[end] = volumes[end - 1] + graph.getDegreeOf(from);
 
         // Dijkstra normal graph
         for (auto const &edge: graph.getEdgesOf(from, orientation)) {
@@ -209,7 +209,7 @@ std::vector<Graph> padded_decomposition(Graph &graph, Distance diameter) {
         order_minus[0] = s;
 
         volumes_plus[0] = graph.getDegreeOf(s);
-        volumes_minus[0] = graph.getDegreeOf(s, Orientation::IN);
+        volumes_minus[0] = graph.getDegreeOf(s);
 
         q_plus.insert(s, 0);
         q_minus.insert(s, 0);
@@ -278,7 +278,7 @@ std::vector<Graph> padded_decomposition(Graph &graph, Distance diameter) {
 
             if (minus_not_done) {
                 order_minus[end] = from_minus;
-                volumes_minus[end] = volumes_minus[end - 1] + graph.getDegreeOf(from_minus, Orientation::IN);
+                volumes_minus[end] = volumes_minus[end - 1] + graph.getDegreeOf(from_minus);
 
                 // For reversed graph
                 for (auto const &edge: graph.getEdgesOf(from_minus, Orientation::IN)) {
@@ -318,7 +318,7 @@ std::vector<Graph> padded_decomposition(Graph &graph, Distance diameter) {
                 pad_plus[order_plus[i]] = true;
             }
             for (int i = start_plus + 1; i <= end; i++)
-                if (d_plus[start_plus] + diameter / config::rounds >= d_plus[order_plus[i]])
+                if (d_plus[order_plus[start_plus]] + diameter / config::pad_rounds >= d_plus[order_plus[i]])
                     pad_plus[order_plus[i]] = true;
         } else {
             vol_u_minus += ball_minus;
@@ -328,7 +328,7 @@ std::vector<Graph> padded_decomposition(Graph &graph, Distance diameter) {
                 pad_minus[order_minus[i]] = true;
             }
             for (int i = start_minus + 1; i <= end; i++)
-                if (d_minus[start_minus] + diameter / config::rounds >= d_minus[order_minus[i]])
+                if (d_minus[order_minus[start_minus]] + diameter / config::pad_rounds >= d_minus[order_minus[i]])
                     pad_minus[order_minus[i]] = true;
         }
 
@@ -381,8 +381,7 @@ std::optional<Distances> pad::PADAlg::runMainAlg(Graph &graph, Distance diameter
     const NodeID n = graph.numberOfNodes();
     const EdgeID m = graph.numberOfEdges();
 
-    if (m <= config::rounds || n <= config::rounds) {
-        //PRINT("END OF RECURSION - SMALL GRAPH");
+    if (n <= config::pad_small) {
         Distances p(n, 0);
         return bcf::runLazyDijkstra(graph, p);
     }
@@ -391,24 +390,22 @@ std::optional<Distances> pad::PADAlg::runMainAlg(Graph &graph, Distance diameter
     const Distances &d_out = bcf::runDijkstra(graph, 0, c::infty, Orientation::OUT);
     const Distances &d_in = bcf::runDijkstra(graph, 0, c::infty, Orientation::IN);
 
-    //PRINT("DIAMETER BEFORE " << diameter);
     diameter = std::min(
         diameter, *std::max_element(d_out.begin(), d_out.end()) + *std::max_element(d_in.begin(), d_in.end()));
 
-    //PRINT("DIAMETER AFTER " << diameter);
-    if (diameter <= config::rounds) {
-        //PRINT("END OF RECURSION - SMALL DIAMETER");
+    PRINT("Recursion Level: " << level);
+    if (diameter <= config::pad_rounds) {
+        PRINT("END OF RECURSION - SMALL DIAMETER: " << diameter);
         Distances p(n, 0);
-        return bcf::runLazyDijkstra(graph, p, Orientation::OUT, diameter);
+        return bcf::runLazyDijkstra(graph, p);
     }
 
-    PRINT("Doing PADDED decomposition n = " << n << " m = " << m << " diameter = " << diameter);
+    PRINT("PADDED DECOMPOSITION: n = " << n << ", m = " << m << ", diameter = " << diameter);
     auto X = padded_decomposition(graph, diameter);
 
     NodeID H_n = 0;
-    for (int i = 0; i < X.size(); i++)
-        H_n += X[i].numberOfNodes();
-
+    for (const auto & i : X)
+        H_n += i.numberOfNodes();
 
     Distances phi(H_n);
     std::vector<std::vector<NodeID> > membership(n);
@@ -464,22 +461,35 @@ std::optional<Distances> pad::PADAlg::runMainAlg(Graph &graph, Distance diameter
         }
     }
 
-    //PRINT("Creating H");
+    PRINT("ADDING EDGES TO H");
+    bool has_padding = false;
     std::vector<FullEdge> e;
     for (int i = 0; i < n; i++) {
-        if (membership[i].size() != 1) {
-            PRINT("HAS PADDING");
-        }
+        if (membership[i].size() != 1)
+            has_padding = true;
+
         for (auto edge: graph.getEdgesOf(i))
             for (auto u: membership[i])
                 for (auto v: membership[edge.target])
                     e.emplace_back(u, v, edge.weight);
     }
-    // Put the potentials from anything
-    auto H = Graph(H_n, e);
+    PRINT("CREATING H");
+    if (has_padding)
+        PRINT("HAS PADDING");
+    else
+        PRINT("NO PADDING");
 
-    PRINT("RUNNING LAZY DIJKSTRA H_n = " << H_n << " e.size() = " << e.size());
-    auto optional_H_potential = bcf::runLazyDijkstra(H, phi, Orientation::OUT, config::rounds);
+    auto H = Graph(H_n, e);
+    PRINT("DONE CREATING");
+
+    PRINT("    RUNNING LAZY DIJKSTRA: H_n = " << H_n << ", e.size() = " << e.size() << ", n = " << n << ", m = " << m);
+
+    std::optional<Distances> optional_H_potential;
+    if (config::pad_use_lazy)
+        optional_H_potential = bcf::runLazyDijkstra(H, phi); // A max number of rounds
+    else
+        optional_H_potential = gor(H, phi);
+
     if (!optional_H_potential.has_value())
         return {};
     auto H_potential = std::move(optional_H_potential.value());
@@ -497,6 +507,7 @@ std::optional<Distances> pad::PADAlg::runMainAlg(Graph &graph, Distance diameter
             }
         }
     }
+    PRINT("DONE LAZY DIJKSTRA");
     return potential;
 }
 

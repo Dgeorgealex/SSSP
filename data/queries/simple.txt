@@ -1,1 +1,1 @@
-SSSP time PAD ../data/graphs/big_aug_rd1_2e6.txt 0 1
+SSSP time BCF ../data/graphs/big_rand_5e6_6.txt 0 5

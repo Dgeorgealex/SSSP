@@ -201,6 +201,17 @@ GraphInfo create_complete_graph(const ArgsType& args) {
     return {n, edges};
 }
 
+GraphInfo create_cycle(const ArgsType& args) {
+    NodeID n = convertStringToInt<NodeID>(args[0]);
+
+    FullEdges edges;
+
+    for (NodeID i = 0; i < n; i++)
+        edges.emplace_back(i, (i+1) % n, 1);
+
+    return {n, edges};
+}
+
 GraphInfo load_graph(const ArgsType& args) {
     std::string filename = args[0];
 
@@ -358,6 +369,17 @@ GraphInfo scaling_step(const ArgsType& args) {
     return {n, edges};
 }
 
+// Count the number of negative edges
+EdgeID countNegativeWeightEdges(const FullEdges &edges) {
+    EdgeID negative_edges_count = 0;
+    for (const auto &edge: edges) {
+        if (std::get<2>(edge) < 0) {
+            negative_edges_count++;
+        }
+    }
+    return negative_edges_count;
+}
+
 int main(int argc, char* argv[]) {
     if (argc < 2) {
         std::cout << "Invalid number of arguments: ./create_graph <graph type>" << std::endl;
@@ -369,12 +391,16 @@ int main(int argc, char* argv[]) {
     // Handle arguments
     ArgsType args;
     bool do_perm = false;
+    bool e_increase = false;
     std::tuple<bool, double, Distance> augment = {false, 0.0, 0};  // Do augmentation, fraction of edges, fixed weight
     bool mute = false;
 
     for (int i = 2; i < argc; i++) {
         if (std::string(argv[i]) == "-p") {
             do_perm = true;
+            continue;
+        } else if (std::string(argv[i]) == "-e") {
+            e_increase = true;
             continue;
         } else if (std::string(argv[i]) == "-m") {
             mute = true;
@@ -396,6 +422,7 @@ int main(int argc, char* argv[]) {
     // Map graph type to function
     std::unordered_map<std::string, GraphCreatorType> graph_type_to_function = {
         {"complete_unit_graph", create_complete_graph},
+        {"cycle", create_cycle},
         {"load_graph", load_graph},
         {"random_graph", create_random_graph},
         {"random_restricted_graph3", create_random_restricted_graph3},
@@ -431,10 +458,23 @@ int main(int argc, char* argv[]) {
         }
     }
 
+    if (e_increase) {
+        // std::random_device rd;
+        // std::mt19937 gen(rd());
+        RandIntGen<Distance>gen (5000);
+        for (FullEdge& edge : edges) {
+            Distance &weight = std::get<2>(edge);
+            if (weight > 0) {
+                weight += gen();
+            }
+        }
+    }
+
     std::sort(edges.begin(), edges.end());
     Graph graph(nodes, edges);
 
     std::clog << "Done." << std::endl << std::flush;
+    std::clog << "Number of negative weight edges: " << countNegativeWeightEdges(edges) << std::endl << std::flush;
     std::clog << "Number of SCC: " << decomposeIntoSCCs(graph).size() << std::endl << std::flush;
 
     if (!mute) graph.format_print();
