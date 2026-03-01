@@ -417,6 +417,7 @@ std::optional<Distances> pad::PADAlg::runMainAlg(Graph &graph, Distance diameter
         Distances potential(X[i].numberOfNodes());
         auto components = decomposeIntoSCCs(X[i]);
 
+        PRINT("RECURSING ON - " << components.size() << " PROBLEMS");
         for (auto &component: components) {
             auto opt_comp_potential = runMainAlg(component, diameter, level + 1);
 
