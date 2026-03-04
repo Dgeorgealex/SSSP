@@ -88,6 +88,39 @@ void Graph::restoreGraph() {
     }
 }
 
+Distance Graph::minWeight() {
+    Distance minW = -1;
+    for (EdgeID i = 0; i < edges.size(); i++)
+        minW = std::min(minW, edges[i].weight);
+
+    return minW;
+}
+
+Distance Graph::maxWeight() {
+    Distance maxW = edges[0].weight;
+    for (EdgeID i = 0; i < edges.size(); i++)
+        maxW = std::max(maxW, edges[i].weight);
+
+    return maxW;
+}
+
+void Graph::addWeight(Distance w) {
+    for (EdgeID i = 0; i < edges.size(); i++)
+        edges[i].weight += w;
+}
+
+void Graph::scaleWeights(Distance w) {
+    for (EdgeID i = 0; i < edges.size(); i++)
+        edges[i].weight *= w;
+}
+
+void Graph::applyPotential(const Distances &potential) {
+    for (NodeID v = 0; v < number_of_nodes; v++)
+        for (int i = offsets[v]; i < offsets[v + 1]; i++)
+            edges[i].weight = edges[i].weight + potential[v] - potential[edges[i].target];
+}
+
+
 Graph::Graph(NodeID n, std::vector<FullEdge>& e, const std::vector<NodeID>& new_global_id) : number_of_nodes(n), is_vtx_active(n, true), offsets(n + 1, 0), offsets_rev(n + 1, 0), global_id(new_global_id) {
 
     // assemble graph in linear time (instead of n log(n))

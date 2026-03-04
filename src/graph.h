@@ -113,6 +113,12 @@ class Graph {
 
     void restoreGraph();
 
+    Distance minWeight();
+    Distance maxWeight();
+
+    void addWeight(Distance w);
+    void scaleWeights(Distance w);
+    void applyPotential(const Distances& potential);
 
     friend Graph readGraph(std::string const& filename);
     friend std::vector<Graph> decomposeIntoSCCs(const Graph& graph);

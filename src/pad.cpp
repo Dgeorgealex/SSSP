@@ -397,7 +397,7 @@ std::optional<Distances> pad::PADAlg::runMainAlg(Graph &graph, Distance diameter
     if (diameter <= config::pad_rounds) {
         PRINT("END OF RECURSION - SMALL DIAMETER: " << diameter);
         Distances p(n, 0);
-        return bcf::runLazyDijkstra(graph, p);
+        return bcf::runLazyDijkstra(graph, p, Orientation::OUT, diameter + 2);
     }
 
     PRINT("PADDED DECOMPOSITION: n = " << n << ", m = " << m << ", diameter = " << diameter);
@@ -487,7 +487,7 @@ std::optional<Distances> pad::PADAlg::runMainAlg(Graph &graph, Distance diameter
 
     std::optional<Distances> optional_H_potential;
     if (config::pad_use_lazy)
-        optional_H_potential = bcf::runLazyDijkstra(H, phi); // A max number of rounds
+        optional_H_potential = bcf::runLazyDijkstra(H, phi, Orientation::OUT, config::pad_rounds * 2 + 1); // A max number of rounds
     else
         optional_H_potential = gor(H, phi);
 

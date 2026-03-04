@@ -26,7 +26,8 @@ enum class SSSPAlg {
     GOR,
     BFCT,
     LazyD,
-    PAD
+    PAD,
+    PADSCALING
 };
 SSSPAlg toSSSPAlg(std::string const& alg_string);
 std::string to_string(SSSPAlg const& alg);
@@ -35,7 +36,8 @@ enum class NegCycleAlg {
     NaiveBFM,
     BCF,
     LazyDijkstra,
-    BFCT
+    BFCT,
+    PADSCALING
 };
 NegCycleAlg toNegCycleAlg(std::string const& alg_string);
 

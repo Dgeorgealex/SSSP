@@ -25,6 +25,8 @@ SSSPAlg toSSSPAlg(std::string const& alg_string) {
         return SSSPAlg::LazyD;
     } else if (alg_string == "PAD") {
         return SSSPAlg::PAD;
+    } else if (alg_string == "PADSCALING") {
+        return SSSPAlg::PADSCALING;
     } else {
         ERROR("Unknown SSSP algorithm string: " << alg_string);
     }
@@ -57,6 +59,8 @@ NegCycleAlg toNegCycleAlg(std::string const& alg_string) {
         return NegCycleAlg::LazyDijkstra;
     } else if (alg_string == "BFCT") {
         return NegCycleAlg::BFCT;
+    } else if (alg_string == "PADSCALING") {
+        return NegCycleAlg::PADSCALING;
     } else {
         ERROR("Unknown NegCycle algorithm string: " << alg_string);
     }
@@ -156,6 +160,41 @@ bool NaiveBMFNegCycleDetection(Graph const& graph) {
 
 }  // anonymous namespace
 
+//Final Dijkstra for all Potential Feasibility algorithms
+Distances FinalDijkstraFP(Graph& graph, const Distances& potential, NodeID source) {
+    NodeID n = graph.numberOfNodes();
+    MEASUREMENT::start(EXP::DIJKSTRA);
+    // run Dijkstra
+    Distances distances(n, c::infty);
+    distances[source] = 0;
+    AddressableKHeap<4, NodeID, Distance> q(n);
+    q.insert(source, 0);
+
+    while (!q.empty()) {
+        Distance dist;
+        NodeID from;
+        q.deleteMin(from, dist);
+        if (dist > distances[from]) continue;
+        for (auto const& edge : graph.getEdgesOf(from)) {
+            auto pot_edge_w = edge.weight + potential[from] - potential[edge.target];
+            assert(pot_edge_w >= 0);
+            auto tentative_dist = distances[from] + pot_edge_w;
+            if (tentative_dist < distances[edge.target]) {
+                distances[edge.target] = tentative_dist;
+                q.insert(edge.target, tentative_dist);
+            }
+        }
+    }
+    MEASUREMENT::stop(EXP::DIJKSTRA);
+    // set all nodes and edges to active
+    graph.restoreGraph();
+    for (NodeID i = 0; i < n; i++) {
+        if (distances[i] != c::infty)
+            distances[i] = distances[i] + potential[i] - potential[source];
+    }
+    return distances;
+}
+
 std::optional<Distances> BCF(Graph& graph, NodeID source) {
     // compute potential
     auto alg = bcf::SSSPAlg();
@@ -201,42 +240,7 @@ std::optional<Distances> BCF(Graph& graph, NodeID source) {
     }
     MEASUREMENT::stop(EXP::JUST_POTENTIAL);
 
-    MEASUREMENT::start(EXP::DIJKSTRA);
-    // run Dijkstra
-    Distances distances(n, c::infty);
-    distances[source] = 0;
-    AddressableKHeap<4, NodeID, Distance> q(n);
-    q.insert(source, 0);
-
-    while (!q.empty()) {
-        Distance dist;
-        NodeID from;
-        q.deleteMin(from, dist);
-        if (dist > distances[from]) continue;
-        for (auto const& edge : graph.getEdgesOf(from)) {
-            // TODO: rewrite edges to avoid this
-            auto pot_edge_w = edge.weight + potential[from] - potential[edge.target];
-            assert(pot_edge_w >= 0);
-            auto tentative_dist = distances[from] + pot_edge_w;
-            if (tentative_dist < distances[edge.target]) {
-                distances[edge.target] = tentative_dist;
-                // if (q.contains(edge.target)) {
-                    // q.decreaseKey(edge.target, tentative_dist);
-                // } else {
-                    // q.insert(edge.target, tentative_dist);
-                // }
-                q.insert(edge.target, tentative_dist);
-            }
-        }
-    }
-    MEASUREMENT::stop(EXP::DIJKSTRA);
-    // set all nodes and edges to active
-    graph.restoreGraph();
-    for (NodeID i = 0; i < n; i++) {
-        if (distances[i] != c::infty)
-            distances[i] = distances[i] + potential[i] - potential[source];
-    }
-    return distances;
+    return FinalDijkstraFP(graph, potential, source);
 }
 
 std::optional<Distances> PAD(Graph &graph, NodeID source) {
@@ -264,7 +268,60 @@ std::optional<Distances> PAD(Graph &graph, NodeID source) {
 
     bcf::fixDagEdges(graph, components, potential);
 
-    // run Dijkstra
+    return FinalDijkstraFP(graph, potential, source);
+}
+
+void finalDFS(NodeID node, const std::vector<std::vector<std::pair<NodeID, Distance>>> &adj, Distances& distances) {
+    for (auto [next, d] : adj[node]) {
+        distances[next] = distances[node] + d;
+        finalDFS(next, adj, distances);
+    }
+}
+
+std::optional<Distances> PADSCALING(Graph &graph, NodeID source) {
+    auto alg = pad::PADAlg();
+    const NodeID n = graph.numberOfNodes();
+
+    Distance minW = graph.minWeight(), maxW = graph.maxWeight();    // Assume for now that minW < 0
+    int iterations = 0;
+
+    Graph current_graph = graph;
+    current_graph.scaleWeights(2 * n);
+
+    while (true) {
+        iterations++;
+
+        minW = current_graph.minWeight();
+        maxW = current_graph.maxWeight();
+        PRINT("MIN_W = " << minW << ", MAX_W = " << maxW);
+
+        if (minW == -1)
+            break;
+
+        Graph working_graph = current_graph;
+        working_graph.addWeight((-minW + 1)/2);
+
+        Distances potential(n);
+
+        auto components = decomposeIntoSCCs(working_graph);
+        for (auto &component: components) {
+            auto opt_component_potential = alg.runMainAlg(component, c::infty);
+            if (!opt_component_potential.has_value())  // Found a cycle
+                return {};
+            auto component_potential = std::move(opt_component_potential.value());
+            for (NodeID i = 0; i < component.numberOfNodes(); i++)
+                potential[component.global_id[i]] = component_potential[i];
+        }
+
+        bcf::fixDagEdges(working_graph, components, potential);
+
+        current_graph.applyPotential(potential);
+    }
+
+    PRINT("ITERATIONS = " << iterations);
+
+    // Dijkstra for the tree
+    std::vector<NodeID> p(n, -1);
     Distances distances(n, c::infty);
     distances[source] = 0;
     AddressableKHeap<4, NodeID, Distance> q(n);
@@ -275,23 +332,31 @@ std::optional<Distances> PAD(Graph &graph, NodeID source) {
         NodeID from;
         q.deleteMin(from, dist);
         if (dist > distances[from]) continue;
-        for (auto const& edge : graph.getEdgesOf(from)) {
-            auto pot_edge_w = edge.weight + potential[from] - potential[edge.target];
-            assert(pot_edge_w >= 0);
-            auto tentative_dist = distances[from] + pot_edge_w;
+        for (auto const& edge : current_graph.getEdgesOf(from)) {
+            auto tentative_dist = distances[from] + std::max(static_cast<Distance>(0), edge.weight);
             if (tentative_dist < distances[edge.target]) {
+                p[edge.target] = from;
                 distances[edge.target] = tentative_dist;
                 q.insert(edge.target, tentative_dist);
             }
         }
     }
 
-    // set all nodes and edges to active
-    graph.restoreGraph();
-    for (NodeID i = 0; i < n; i++) {
-        if (distances[i] != c::infty)
-            distances[i] = distances[i] + potential[i] - potential[source];
-    }
+    // Compute the final distances on the original graph
+    std::fill(distances.begin(), distances.end(), c::infty);
+
+    std::vector<std::vector<std::pair<NodeID, Distance>>> adj(n);
+    for (NodeID v = 0; v < n; v++)
+        for (auto e:graph.getEdgesOf(v))
+            if (v == p[e.target])
+                distances[e.target] = std::min(distances[e.target], e.weight);
+
+    for (NodeID v = 0; v < n; v++)
+        if (p[v] != -1)
+            adj[p[v]].emplace_back(v, distances[v]);
+
+    distances[source] = 0;
+    finalDFS(source, adj, distances);
 
     return distances;
 }
@@ -442,6 +507,8 @@ std::optional<Distances> computeSSSP(
             return bcf::runLazyDijkstra(graph, source);
         case SSSPAlg::PAD:
             return PAD(graph, source);
+        case SSSPAlg::PADSCALING:
+            return PADSCALING(graph, source);
         default:
             ERROR("Unknown algorithm.");
     };
@@ -457,6 +524,8 @@ bool negCycleDetection(NegCycleAlg algorithm, Graph& graph) {
             return !bcf::runLazyDijkstra(graph, Distances(), Orientation::OUT).has_value();
         case NegCycleAlg::BFCT: // FIXME: this does only report negative cycles reachable from node 0
             return !BFCT(graph, 0).has_value();
+        case NegCycleAlg::PADSCALING:
+            return !PADSCALING(graph, 0).has_value();
         default:
             ERROR("Unknown algorithm.");
     };
@@ -467,7 +536,7 @@ bool isResultCorrect(Graph const& graph, Distances const& distances, NodeID sour
     // and we check that for at least one incoming edge of v, dist(v) == dist(u) + w(u, v).
     // If the node has no incoming edges, we check that dist(v) == inf.
 
-    const bool constexpr verbose = false;
+    const bool constexpr verbose = true;
 
     if (distances.size() != graph.numberOfNodes()) {
         if constexpr (verbose) {
