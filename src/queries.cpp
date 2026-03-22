@@ -9,6 +9,7 @@
 #include "algorithms.h"
 #include "defs.h"
 #include "graph.h"
+#include "pad.h"
 
 Queries readQueries(std::string const& filename) {
     Queries queries;
@@ -161,6 +162,20 @@ std::string getFilenameWithoutExtension(const std::string& filename) {
 
 bool handleCorrectness(std::optional<Distances> const& result, const Graph& graph, SSSPData const& data, NodeID number_of_nodes) {
 
+    if (data.algorithm == SSSPAlg::PAD) {
+        std::string filename_stats = getFilenameWithoutExtension(data.graph_filename) + "_statistics.txt";
+        std::ofstream ofs(filename_stats);
+
+        ofs << "Scaling iterarions = " << pad::stats.scaling_iterations << ", " << "Final minW = " << pad::stats.final_minW << std::endl;
+        ofs << "Maximum recursion level = " << pad::stats.max_recursion_level << std::endl;
+        ofs << "Decomposition calls = " << pad::stats.decomposition_calls << ", of which with padding = " << pad::stats.decomposition_calls_with_padding << std::endl;
+        MEASUREMENT::print(EXP::LAZY_IN_SMALL, ofs);
+        MEASUREMENT::print(EXP::LAZY_IN_PADDING, ofs);
+        MEASUREMENT::print(EXP::NEGATIVE_EDGES_IN_DECOMPOSITION, ofs);
+        MEASUREMENT::print(EXP::SCC_ADMISSIBLE_GRAPH, ofs);
+        ofs << std::endl;
+    }
+
     // Get the name of the file with the result
     std::string filename_check = getFilenameWithoutExtension(data.graph_filename) + "_result" + std::to_string(data.source) + ".txt";
     std::ifstream ifs(filename_check);
@@ -278,6 +293,12 @@ ExpTime timeQuery(SSSPData const& data, Graph& graph) {
         progressBar(static_cast<double>(i + 1) / data.iters, 50);
     }
     std::clog << std::endl << std::flush;
+
+        std::string filename_stats = getFilenameWithoutExtension(data.graph_filename) + "_statistics.txt";
+        std::ofstream ofs(filename_stats, std::ios::app);
+        ofs << to_string(data.algorithm) << ": ";
+        MEASUREMENT::print(EXP::INNER_LOOP_ALL, ofs);
+        ofs << std::endl;
 
     std::ostringstream oss;
     MEASUREMENT::print(EXP::INNER_LOOP_ALL, oss);

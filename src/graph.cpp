@@ -216,6 +216,7 @@ Graph readGraph(std::string const& filename) {
 }
 
 // computes topological sort by running DFS and recording exiting times
+// Isn't this super slow if a node is really dense in some bad case??? TODO()
 std::vector<NodeID> getTopologicalSort(const Graph& graph, Orientation orientation) {
     const NodeID n = graph.numberOfNodes();
     std::vector<bool> visited(n, false);

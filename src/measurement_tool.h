@@ -199,7 +199,7 @@ class MEASUREMENT {
                 }
                 os << std::setprecision(5)
                           << name << ": mean = " << mean() << ", stddev = " << stddev()
-                          << ", min = " << min() << ", max = " << max() << "\n";
+                          << ", min = " << min() << ", max = " << max() << ", count = " << values.size() << "\n";
             }
             void reset() override { values.clear(); }
         };

@@ -46,7 +46,7 @@ m=$(($coef*10**$pow))
 k=$(($m/$k_coef/$dag_frac))
 
 # Run create_graph.py
-pypy3 create_graph.py "bad_$alg" $k > ../data/graphs/big_aug_"$alg"_"$coef"e"$pow"_bare.txt
+python3 create_graph.py "bad_$alg" $k > ../data/graphs/big_aug_"$alg"_"$coef"e"$pow"_bare.txt
 
 # Compute maxw
 # maxw=$((2000000 * coef))
@@ -56,6 +56,6 @@ maxw=$(($k*6))
 ../build/CreateGraph load_graph ../data/graphs/big_aug_"$alg"_"$coef"e"$pow"_bare.txt -a $dag_frac $maxw > ../data/graphs/big_aug_"$alg"_"$coef"e"$pow"_sorted.txt
 
 # Run CreateGraph to permute the graph
-../build/CreateGraph load_graph ../data/graphs/big_aug_"$alg"_"$coef"e"$pow"_sorted.txt -p > ../data/graphs/big_aug_"$alg"_"$coef"e"$pow".txt
+../build/CreateGraph load_graph ../data/graphs/big_aug_"$alg"_"$coef"e"$pow"_sorted.txt -p > ../data/graphs/big_aug_"$alg"_"$coef"e"$pow".base
 
 echo "Script completed successfully"

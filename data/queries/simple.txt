@@ -1,1 +1,1 @@
-SSSP time BCF ../data/graphs/big_rand_5e6_6.txt 0 5
+SSSP time GOR ../data/graphs/big_aug_gor_2e6_t_c1.txt 0 1

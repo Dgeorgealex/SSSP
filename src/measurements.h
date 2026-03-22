@@ -51,6 +51,10 @@ enum class MEASUREMENT::EXP {
     INN_FIX,
     INN_POT,
     LAST_LAZY,
+    LAZY_IN_SMALL,
+    LAZY_IN_PADDING,
+    SCC_ADMISSIBLE_GRAPH,
+    NEGATIVE_EDGES_IN_DECOMPOSITION,
 };
 
 inline auto MEASUREMENT::getMeasurements() -> Measurements {
@@ -87,5 +91,9 @@ inline auto MEASUREMENT::getMeasurements() -> Measurements {
         {"time inner fix", EXP::INN_FIX, TIMER_DATA},
         {"time inner potential", EXP::INN_POT, TIMER_DATA},
         {"last lazy", EXP::LAST_LAZY, TIMER_DATA},
+        {"number of lazy dijkstra rounds in small base case", EXP::LAZY_IN_SMALL, INT_DATA},
+        {"number of lazy dijkstra rounds in padding case", EXP::LAZY_IN_PADDING, INT_DATA},
+        {"number of negative edges in decomposition", EXP::NEGATIVE_EDGES_IN_DECOMPOSITION, INT_DATA},
+        {"Maximum SCC sizes in admissible graph", EXP::SCC_ADMISSIBLE_GRAPH, INT_DATA},
     };
 }

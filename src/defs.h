@@ -7,7 +7,7 @@
 #define NOP do { } while (0)
 
 // printing macros
-// #define NVERBOSE
+#define NVERBOSE
 
 #if defined(NDEBUG)
 #define DEBUG(x) NOP

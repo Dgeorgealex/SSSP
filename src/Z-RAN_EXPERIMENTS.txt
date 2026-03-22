@@ -1,0 +1,499 @@
+FIRST BATCH...
+
+SSSP time BCF ../data/graphs/big_aug_bfct_5e6.txt 0 5
+Average: 4812.5 ms. std: 266.6 ms. min: 4552.7 ms. max: 5293.8 ms.
+
+SSSP time PAD ../data/graphs/big_aug_bfct_5e6.txt 0 5
+Average: 10807 ms. std: 105.45 ms. min: 10705 ms. max: 10993 ms
+
+SSSP time GOR ../data/graphs/big_aug_bfct_5e6.txt 0 5                   *
+Average: 2394 ms. std: 22.862 ms. min: 2376.1 ms. max: 2438.4 ms.
+
+
+SSSP time BCF ../data/graphs/big_aug_dfs_5e6.txt 0 5                    **
+Average: 3463.7 ms. std: 37.213 ms. min: 3424.8 ms. max: 3517.9 ms.
+
+SSSP time PAD ../data/graphs/big_aug_dfs_5e6.txt 0 5
+Average: 10848 ms. std: 169.28 ms. min: 10663 ms. max: 11085 ms.
+
+SSSP time GOR ../data/graphs/big_aug_dfs_5e6.txt 0 5
+Average: 10860 ms. std: 37.139 ms. min: 10811 ms. max: 10910 ms.
+
+
+SSSP time BCF ../data/graphs/big_aug_rd1_5e6.txt 0 5                    **
+Average: 4161.2 ms. std: 143.12 ms. min: 4057.7 ms. max: 4443 ms.
+
+SSSP time PAD ../data/graphs/big_aug_rd1_5e6.txt 0 5
+Average: 11445 ms. std: 83.261 ms. min: 11313 ms. max: 11545 ms.
+
+SSSP time GOR ../data/graphs/big_aug_rd1_5e6.txt 0 5
+Average: 11515 ms. std: 103.15 ms. min: 11384 ms. max: 11702 ms.
+
+
+SSSP time BCF ../data/graphs/big_aug_rd2_5e6.txt 0 5
+Average: 3252.4 ms. std: 59.477 ms. min: 3189.3 ms. max: 3365 ms.
+
+SSSP time PAD ../data/graphs/big_aug_rd2_5e6.txt 0 5
+Average: 9223.1 ms. std: 104.02 ms. min: 9131.1 ms. max: 9426.2 ms.
+
+Average: 564.07 ms. std: 11.422 ms. min: 554 ms. max: 582.39 ms.        *
+SSSP time GOR ../data/graphs/big_aug_rd2_5e6.txt 0 5
+
+
+SSSP time BCF ../data/graphs/big_rand_5e6.txt 0 5
+Average: 7672.2 ms. std: 145.2 ms. min: 7518 ms. max: 7891.5 ms.
+
+SSSP time PAD ../data/graphs/big_rand_5e6.txt 0 5
+Average: 11660 ms. std: 227.32 ms. min: 11472 ms. max: 12097 ms.
+
+SSSP time GOR ../data/graphs/big_rand_5e6.txt 0 5
+Average: 1132.6 ms. std: 42.372 ms. min: 1101.2 ms. max: 1214.9 ms.     *
+
+
+
+
+SECOND BATCH...
+SSSP time ../data/graphs/big_aug_bfct_5e6_6.txt 0 5                         +6
+PAD Average: 13885 ms. std: 56.2 ms. min: 13809 ms. max: 13980 ms.
+BCF Average: 6637.7 ms. std: 54.265 ms. min: 6589.3 ms. max: 6740.5 ms.
+GOR Average: 3523.9 ms. std: 7.1445 ms. min: 3514.7 ms. max: 3533.1 ms.     ***
+
+
+SSSP time ../data/graphs/big_aug_bfct_5e6_12.txt 0 5                        +6
+PAD Average: 9112.2 ms. std: 51.239 ms. min: 9057.3 ms. max: 9201.7 ms.
+BCF Average: 3643.4 ms. std: 22.696 ms. min: 3619.8 ms. max: 3684.2 ms.
+GOR Average: 1024.4 ms. std: 6.6382 ms. min: 1016.7 ms. max: 1036.6 ms.     ***
+
+
+SSSP time ../data/graphs/big_aug_dfs_5e6_6.txt 0 5                          +9
+PAD Average: 13100 ms. std: 51.885 ms. min: 13027 ms. max: 13168 ms.
+BCF Average: 4604.8 ms. std: 5.7358 ms. min: 4596 ms. max: 4612.1 ms.       **
+GOR Average: 10775 ms. std: 17.141 ms. min: 10762 ms. max: 10809 ms.
+
+
+SSSP time ../data/graphs/big_aug_dfs_5e6_12.txt 0 5
+PAD Average: 8604.8 ms. std: 19.756 ms. min: 8578.8 ms. max: 8626 ms.       +5
+BCF Average: 3273.5 ms. std: 7.3356 ms. min: 3260.9 ms. max: 3283.8 ms.     **
+GOR Average: 7674.6 ms. std: 30.497 ms. min: 7641.3 ms. max: 7728.5 ms.
+
+
+SSSP time ../data/graphs/big_aug_rd1_5e6_6.txt 0 5                          +9
+PAD Average: 15696 ms. std: 15.466 ms. min: 15679 ms. max: 15720 ms.
+BCF Average: 6558.4 ms. std: 17.117 ms. min: 6536.4 ms. max: 6588.7 ms.     **
+GOR Average: 11465 ms. std: 10.792 ms. min: 11448 ms. max: 11479 ms.
+
+
+SSSP time ../data/graphs/big_aug_rd1_5e6_12.txt 0 5                         +5
+PAD Average: 9433.8 ms. std: 12.061 ms. min: 9416.1 ms. max: 9447.5 ms.
+BCF Average: 4019.9 ms. std: 29.538 ms. min: 3984.9 ms. max: 4055.6 mS.     **
+GOR Average: 9114.3 ms. std: 13.475 ms. min: 9093.4 ms. max: 9134 ms.
+
+
+SSSP time ../data/graphs/big_aug_rd2_5e6_6.txt 0 5                          +8
+PAD Average: 12637 ms. std: 107.66 ms. min: 12536 ms. max: 12792 ms.
+BCF Average: 4793.9 ms. std: 20.208 ms. min: 4774.2 ms. max: 4828.2 ms.
+GOR Average: 3582.4 ms. std: 5.8474 ms. min: 3576.8 ms. max: 3592.8 ms.     ***
+
+
+SSSP time ../data/graphs/big_aug_rd2_5e6_12.txt 0 5                         +5
+PAD Average: 8684.9 ms. std: 5.4511 ms. min: 8677.4 ms. max: 8690.1 ms.
+BCF Average: 3371.3 ms. std: 11.652 ms. min: 3359.6 ms. max: 3389.3 ms.
+PAD Average: 1046.8 ms. std: 6.2687 ms. min: 1041.5 ms. max: 1059 ms.       ***
+
+
+SSSP time ../data/graphs/big_rand_5e6_6.txt 0 5                             -3
+PAD Average: 4778.6 ms. std: 9.9085 ms. min: 4766.4 ms. max: 4792 ms.
+BCF Average: 7813.6 ms. std: 11.895 ms. min: 7804.2 ms. max: 7837 ms.
+GOR Average: 322.78 ms. std: 8.4784 ms. min: 315.37 ms. max: 339.22 ms.     ***
+
+
+SSSP time ../data/graphs/big_rand_5e6_6_e.txt 0 5                           +4
+PAD Average: 13685 ms. std: 44.498 ms. min: 13632 ms. max: 13753 ms.
+BCF Average: 9306.5 ms. std: 22.852 ms. min: 9280.2 ms. max: 9340.8 ms.
+GOR Average: 1789.1 ms. std: 9.1153 ms. min: 1781.1 ms. max: 1806.9 ms.     ***
+
+
+???????????????????????????????????????????????????????????????????????????????
+SSSP time ../data/graphs/big_rand_5e6_12_e.txt 0 5                          +3
+PAD Average: 11209 ms. std: 82.36 ms. min: 11120 ms. max: 11323 ms.
+BCF Average: 8415 ms. std: 140.27 ms. min: 19055 ms. max: 19428 ms.
+GOR Average: 819.18 ms. std: 6.225 ms. min: 812 ms. max: 828.87 ms.         ***
+
+
+SSSP time ../data/graphs/big_clique_2000_e.txt 0 5                          -1.5
+PAD Average: 239.36 ms. std: 7.1882 ms. min: 231.99 ms. max: 250.58 ms.
+BCF Average: 374.59 ms. std: 10.667 ms. min: 362.95 ms. max: 394.14 ms.
+GOR Average: 46.806 ms. std: 7.1323 ms. min: 42.616 ms. max: 61.053 ms.     ***
+
+
+SSSP time ../data/graphs/big_cycle_5000000_e.txt 0 5                        +1
+PAD Average: 6470 ms. std: 142.23 ms. min: 6259.9 ms. max: 6673.6 ms.
+BCF Average: 5821 ms. std: 98.366 ms. min: 5702.1 ms. max: 5958.8 ms.
+GOR Average: 139.29 ms. std: 2.0824 ms. min: 136.83 ms. max: 142.01 ms.     ***
+
+
+SSSP time ../data/graphs/USA-road-d.W_100.txt 0 1
+PADSCALING:
+Average: 1.1987e+06 ms. std: 0 ms. min: 1.1987e+06 ms. max: 1.1987e+06 ms.
+        - 37 396 per iteration
+
+PAD
+Average: 70517 ms. std: 0 ms. min: 70517 ms. max: 70517 ms.
+
+BCF
+Average: 24546 ms. std: 0 ms. min: 24546 ms. max: 24546 ms.
+
+GOR
+Average: 1762.7 ms. std: 0 ms. min: 1762.7 ms. max: 1762.7 ms.
+
+BCFT
+Average: 4321.2 ms. std: 0 ms. min: 4321.2 ms. max: 4321.2 ms.
+
+
+SSSP time ../data/graphs/USA-road-d.W_100_c.txt 0 1 -> has cycle
+
+PADSCALING
+STOPPED AFTER 30 min:
+    RUNNING LAZY DIJKSTRA: H_n = 6332490, e.size() = 15568874, n = 6262104, m = 15249146
+    This needs to be repeated 3.000 times
+
+    With heuristic: 110100 ms
+
+BCFT
+    Average: 921.36 ms. std: 0 ms. min: 921.36 ms. max: 921.36 ms.
+
+BCF
+    LAPTOP CRASHED
+
+
+SSSP time ../data/graphs/big_rand_1e6_6_e_c_n.txt 0 1 -> has cycle
+
+PADSCALING
+    Average: 530870 ms. std: 0 ms. min: 530870 ms. max: 530870 ms.
+        DONE CREATING
+            RUNNING LAZY DIJKSTRA: H_n = 165864, e.size() = 996156, n = 165843, m = 995922
+        MAX ROUNDS REACHED: 3001
+
+    DONE CREATING
+        RUNNING LAZY DIJKSTRA: H_n = 165891, e.size() = 996465, n = 165843, m = 995922
+    MAX ROUNDS REACHED: 1201
+    Average: 105710 ms. std: 0 ms. min: 105710 ms. max: 105710 ms.
+
+BFCT
+    Average: 277.24 ms. std: 0 ms. min: 277.24 ms. max: 277.24 ms.
+
+BCF
+    Average: 120400 ms. std: 0 ms. min: 120400 ms. max: 120400 ms.
+
+
+SSSP time ../data/graphs/big_aug_bfct_1e6_6_c.txt 0 1 -> has cycle length 100
+
+PADSCALING
+    DONE CREATING
+        RUNNING LAZY DIJKSTRA: H_n = 84759, e.size() = 412491, n = 84759, m = 412491
+    MAX ROUNDS REACHED: 1201
+    Average: 34177 ms. std: 0 ms. min: 34177 ms. max: 34177 ms.
+
+BCF
+    Average: 14211 ms. std: 0 ms. min: 14211 ms. max: 14211 ms.
+
+BFCT
+    Average: 45312 ms. std: 0 ms. min: 45312 ms. max: 45312 ms.
+
+
+
+
+OKI - DOKI:
+
+SSSP time GOR ../data/graphs/big_aug_gor_2e6.base 0 1
+SSSP time GOR ../data/graphs/big_aug_gor_2e6_e.txt 0 1
+SSSP time GOR ../data/graphs/big_aug_gor_2e6_e_t.txt 0 1
+SSSP time GOR ../data/graphs/big_aug_gor_2e6_e_t_c1.txt 0 1
+SSSP time GOR ../data/graphs/big_aug_gor_2e6_e_t_c2.txt 0 1
+SSSP time GOR ../data/graphs/big_aug_gor_2e6_e_t_c3.txt 0 1
+
+SSSP time GOR ../data/graphs/big_aug_rd1_2e6.base 0 1
+SSSP time GOR ../data/graphs/big_aug_rd1_2e6_e.txt 0 1
+SSSP time GOR ../data/graphs/big_aug_rd1_2e6_e_t.txt 0 1
+SSSP time GOR ../data/graphs/big_aug_rd1_2e6_e_t_c1.txt 0 1
+SSSP time GOR ../data/graphs/big_aug_rd1_2e6_e_t_c2.txt 0 1
+SSSP time GOR ../data/graphs/big_aug_rd1_2e6_e_t_c3.txt 0 1
+
+SSSP time GOR ../data/graphs/big_rand_2e6.base 0 1
+SSSP time GOR ../data/graphs/big_rand_2e6_e.txt 0 1
+SSSP time GOR ../data/graphs/big_rand_2e6_e_t.txt 0 1
+SSSP time GOR ../data/graphs/big_rand_2e6_e_t_c1.txt 0 1
+SSSP time GOR ../data/graphs/big_rand_2e6_e_t_c2.txt 0 1
+SSSP time GOR ../data/graphs/big_rand_2e6_e_t_c3.txt 0 1
+
+
+../data/graphs/big_aug_gor_2e6.base 0 1     -     e     -      et      -     etc1-3
+
+Scaling iterarions = 18, Final minW = -1130284
+Maximum recursion level = 14
+Decomposition calls = 2270, of which with padding = 950
+number of lazy dijkstra rounds in small base case: mean = 1.0029, stddev = 0, min = 1, max = 391, count = 3635342
+number of lazy dijkstra rounds in padding case: mean = 1.9687, stddev = 3, min = 1, max = 42, count = 2270
+number of negative edges in decomposition: mean = 1624.9, stddev = 9611.7, min = 0, max = 1.6599e+05, count = 2270
+Maximum SCC sizes in admissible graph: mean = 0.35066, stddev = 0, min = 0, max = 1, count = 2270
+
+PADSCALING: inner loop all: mean = 58630 ms, stddev = 0 ms, min = 58630 ms, max = 58630 ms
+
+GOR: inner loop all: mean = 6022.6 ms, stddev = 0 ms, min = 6022.6 ms, max = 6022.6 ms
+
+
+
+
+Scaling iterarions = 4, Final minW = -18518564815
+Maximum recursion level = 13
+Decomposition calls = 369, of which with padding = 0
+number of lazy dijkstra rounds in small base case: mean = 1, stddev = 0, min = 1, max = 1, count = 579897
+number of lazy dijkstra rounds in padding case: mean = 1.0027, stddev = 0, min = 1, max = 2, count = 369
+number of negative edges in decomposition: mean = 80.279, stddev = 886.68, min = 0, max = 9877, count = 369
+Maximum SCC sizes in admissible graph: mean = 0.01626, stddev = 0, min = 0, max = 1, count = 369
+
+PADSCALING: inner loop all: mean = 10228 ms, stddev = 0 ms, min = 10228 ms, max = 10228 ms
+
+GOR: inner loop all: mean = 62.129 ms, stddev = 0 ms, min = 62.129 ms, max = 62.129 ms
+
+
+
+Scaling iterarions = 16, Final minW = -5558790
+Maximum recursion level = 13
+Decomposition calls = 1530, of which with padding = 50
+number of lazy dijkstra rounds in small base case: mean = 1.0001, stddev = 0, min = 1, max = 3, count = 3007158
+number of lazy dijkstra rounds in padding case: mean = 1.351, stddev = 0, min = 1, max = 3, count = 1530
+number of negative edges in decomposition: mean = 4462.6, stddev = 31282, min = 0, max = 5.2864e+05, count = 1530
+Maximum SCC sizes in admissible graph: mean = 0.40065, stddev = 0, min = 0, max = 1, count = 1530
+
+PADSCALING: inner loop all: mean = 49942 ms, stddev = 0 ms, min = 49942 ms, max = 49942 ms
+
+GOR: inner loop all: mean = 54.071 ms, stddev = 0 ms, min = 54.071 ms, max = 54.071 ms
+
+
+
+Scaling iterarions = 20, Final minW = -249523
+Maximum recursion level = 12
+Decomposition calls = 1838, of which with padding = 49
+number of lazy dijkstra rounds in small base case: mean = 1.0001, stddev = 0, min = 1, max = 3, count = 4002290
+number of lazy dijkstra rounds in padding case: mean = 1.3558, stddev = 0, min = 1, max = 3, count = 1838
+number of negative edges in decomposition: mean = 3826.1, stddev = 27885, min = 0, max = 5.2805e+05, count = 1838
+Maximum SCC sizes in admissible graph: mean = 0.39445, stddev = 0, min = 0, max = 1, count = 1838
+
+PADSCALING: inner loop all: mean = 63683 ms, stddev = 0 ms, min = 63683 ms, max = 63683 ms
+
+GOR: inner loop all: mean = 61.038 ms, stddev = 0 ms, min = 61.038 ms, max = 61.038 ms
+
+
+
+Scaling iterarions = 28, Final minW = -1083
+Maximum recursion level = 11
+Decomposition calls = 2469, of which with padding = 153
+number of lazy dijkstra rounds in small base case: mean = 1.0015, stddev = 0, min = 1, max = 393, count = 5565430
+number of lazy dijkstra rounds in padding case: mean = 1.514, stddev = 1, min = 1, max = 43, count = 2469
+number of negative edges in decomposition: mean = 2801.8, stddev = 22586, min = 0, max = 5.2842e+05, count = 2469
+Maximum SCC sizes in admissible graph: mean = 0.54435, stddev = 0, min = 0, max = 1, count = 2469
+
+PADSCALING: inner loop all: mean = 90212 ms, stddev = 0 ms, min = 90212 ms, max = 90212 ms
+
+GOR: inner loop all: mean = 58.019 ms, stddev = 0 ms, min = 58.019 ms, max = 58.019 ms
+
+
+
+Scaling iterarions = 5, Final minW = -9961951534
+Maximum recursion level = 10
+Decomposition calls = 250, of which with padding = 21
+number of lazy dijkstra rounds in small base case: mean = 1.0001, stddev = 0, min = 1, max = 3, count = 981933
+number of lazy dijkstra rounds in padding case: mean = 1.988, stddev = 0, min = 1, max = 10, count = 250
+number of negative edges in decomposition: mean = 15912, stddev = 66641, min = 0, max = 5.6134e+05, count = 250
+Maximum SCC sizes in admissible graph: mean = 0.888, stddev = 0, min = 0, max = 1, count = 250
+
+PADSCALING: inner loop all: mean = 18088 ms, stddev = 0 ms, min = 18088 ms, max = 18088 ms
+
+GOR: inner loop all: mean = 284.76 ms, stddev = 0 ms, min = 284.76 ms, max = 284.76 ms
+
+
+
+
+
+
+
+
+
+
+
+Scaling iterarions = 3, Final minW = -111111
+Maximum recursion level = 11
+Decomposition calls = 828, of which with padding = 34
+number of lazy dijkstra rounds in small base case: mean = 1.5398, stddev = 11.314, min = 1, max = 494, count = 265018
+number of lazy dijkstra rounds in padding case: mean = 5.3382, stddev = 7.5498, min = 1, max = 65, count = 828
+number of negative edges in decomposition: mean = 11.895, stddev = 23.216, min = 0, max = 427, count = 828
+Maximum SCC sizes in admissible graph: mean = 1, stddev = 0, min = 1, max = 1, count = 828
+
+PADSCALING: inner loop all: mean = 14089 ms, stddev = 0 ms, min = 14089 ms, max = 14089 ms
+
+GOR: inner loop all: mean = 4926.4 ms, stddev = 0 ms, min = 4926.4 ms, max = 4926.4 ms
+
+
+
+Scaling iterarions = 5, Final minW = -27778
+Maximum recursion level = 12
+Decomposition calls = 1582, of which with padding = 102
+number of lazy dijkstra rounds in small base case: mean = 1.4738, stddev = 10.344, min = 1, max = 494, count = 553183
+number of lazy dijkstra rounds in padding case: mean = 5.1378, stddev = 6.7823, min = 1, max = 65, count = 1582
+number of negative edges in decomposition: mean = 13.625, stddev = 27.24, min = 0, max = 427, count = 1582
+Maximum SCC sizes in admissible graph: mean = 1, stddev = 0, min = 1, max = 1, count = 1582
+
+PADSCALING: inner loop all: mean = 29504 ms, stddev = 0 ms, min = 29504 ms, max = 29504 ms
+
+GOR: inner loop all: mean = 3365.6 ms, stddev = 0 ms, min = 3365.6 ms, max = 3365.6 ms
+
+
+
+Scaling iterarions = 23, Final minW = -31742
+Maximum recursion level = 12
+Decomposition calls = 2865, of which with padding = 1270
+number of lazy dijkstra rounds in small base case: mean = 1.0576, stddev = 3.3166, min = 1, max = 499, count = 4768279
+number of lazy dijkstra rounds in padding case: mean = 4.2935, stddev = 5.3852, min = 1, max = 65, count = 2865
+number of negative edges in decomposition: mean = 3404, stddev = 26125, min = 0, max = 4.3346e+05, count = 2865
+Maximum SCC sizes in admissible graph: mean = 0.99756, stddev = 0, min = 0, max = 1, count = 2865
+
+PADSCALING: inner loop all: mean = 1.0303e+05 ms, stddev = 0 ms, min = 1.0303e+05 ms, max = 1.0303e+05 ms
+
+GOR: inner loop all: mean = 3583.8 ms, stddev = 0 ms, min = 3583.8 ms, max = 3583.8 ms
+
+
+
+Scaling iterarions = 19, Final minW = -507590
+Maximum recursion level = 11
+Decomposition calls = 1572, of which with padding = 1225
+number of lazy dijkstra rounds in small base case: mean = 1.0137, stddev = 1.4142, min = 1, max = 469, count = 4256156
+number of lazy dijkstra rounds in padding case: mean = 3.2882, stddev = 4.2426, min = 1, max = 152, count = 1572
+number of negative edges in decomposition: mean = 5963.8, stddev = 34837, min = 0, max = 4.3299e+05, count = 1572
+Maximum SCC sizes in admissible graph: mean = 0.99873, stddev = 0, min = 0, max = 1, count = 1572
+
+PADSCALING: inner loop all: mean = 79972 ms, stddev = 0 ms, min = 79972 ms, max = 79972 ms
+
+GOR: inner loop all: mean = 210.62 ms, stddev = 0 ms, min = 210.62 ms, max = 210.62 ms
+
+
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 600 bug ?????????????????????????????????????????????????????
+Scaling iterarions = 19, Final minW = -507890
+Maximum recursion level = 14
+Decomposition calls = 1368, of which with padding = 1097
+number of lazy dijkstra rounds in small base case: mean = 1.0031, stddev = 0, min = 1, max = 209, count = 4864084
+number of lazy dijkstra rounds in padding case: mean = 3.2186, stddev = 1.4142, min = 1, max = 14, count = 1368
+number of negative edges in decomposition: mean = 7552.8, stddev = 37617, min = 0, max = 4.3117e+05, count = 1368
+Maximum SCC sizes in admissible graph: mean = 0.99854, stddev = 0, min = 0, max = 1, count = 1368
+
+PADSCALING: inner loop all: mean = 94383 ms, stddev = 0 ms, min = 94383 ms, max = 94383 ms
+
+
+
+Scaling iterarions = 5, Final minW = -9961951534
+Maximum recursion level = 10
+Decomposition calls = 250, of which with padding = 21
+number of lazy dijkstra rounds in small base case: mean = 1.0001, stddev = 0, min = 1, max = 3, count = 981933
+number of lazy dijkstra rounds in padding case: mean = 1.988, stddev = 0, min = 1, max = 10, count = 250
+number of negative edges in decomposition: mean = 15912, stddev = 66641, min = 0, max = 5.6134e+05, count = 250
+Maximum SCC sizes in admissible graph: mean = 0.888, stddev = 0, min = 0, max = 1, count = 250
+
+PADSCALING: inner loop all: mean = 18088 ms, stddev = 0 ms, min = 18088 ms, max = 18088 ms
+
+GOR: inner loop all: mean = 284.76 ms, stddev = 0 ms, min = 284.76 ms, max = 284.76 ms
+
+
+
+
+
+
+
+
+
+RAND et - c123
+Scaling iterarions = 21, Final minW = -187792
+Maximum recursion level = 8
+Decomposition calls = 569, of which with padding = 150
+number of lazy dijkstra rounds in small base case: mean = 1.0001, stddev = 0, min = 1, max = 4, count = 6611132
+number of lazy dijkstra rounds in padding case: mean = 2.2531, stddev = 0, min = 1, max = 4, count = 569
+number of negative edges in decomposition: mean = 21161, stddev = 68598, min = 0, max = 4.2006e+05, count = 569
+Maximum SCC sizes in admissible graph: mean = 0.942, stddev = 0, min = 0, max = 1, count = 569
+
+PADSCALING: inner loop all: mean = 85570 ms, stddev = 0 ms, min = 85570 ms, max = 85570 ms
+
+GOR: inner loop all: mean = 406.16 ms, stddev = 0 ms, min = 406.16 ms, max = 406.16 ms
+
+
+
+Scaling iterarions = 20, Final minW = -377185
+Maximum recursion level = 9
+Decomposition calls = 537, of which with padding = 139
+number of lazy dijkstra rounds in small base case: mean = 1.0001, stddev = 0, min = 1, max = 4, count = 6342947
+number of lazy dijkstra rounds in padding case: mean = 2.1993, stddev = 0, min = 1, max = 4, count = 537
+number of negative edges in decomposition: mean = 22014, stddev = 69972, min = 0, max = 4.1992e+05, count = 537
+Maximum SCC sizes in admissible graph: mean = 0.94413, stddev = 0, min = 0, max = 1, count = 537
+
+PADSCALING: inner loop all: mean = 82754 ms, stddev = 0 ms, min = 82754 ms, max = 82754 ms
+
+GOR: inner loop all: mean = 331.26 ms, stddev = 0 ms, min = 331.26 ms, max = 331.26 ms
+
+
+
+Scaling iterarions = 23, Final minW = -47008
+Maximum recursion level = 9
+Decomposition calls = 596, of which with padding = 178
+number of lazy dijkstra rounds in small base case: mean = 1.0001, stddev = 0, min = 1, max = 228, count = 7340192
+number of lazy dijkstra rounds in padding case: mean = 2.5017, stddev = 1, min = 1, max = 14, count = 596
+number of negative edges in decomposition: mean = 21635, stddev = 67393, min = 0, max = 4.2265e+05, count = 596
+Maximum SCC sizes in admissible graph: mean = 0.95805, stddev = 0, min = 0, max = 1, count = 596
+
+PADSCALING: inner loop all: mean = 95124 ms, stddev = 0 ms, min = 95124 ms, max = 95124 ms
+
+GOR: inner loop all: mean = 691.23 ms, stddev = 0 ms, min = 691.23 ms, max = 691.23 ms
+
+
+
+Scaling iterarions = 36, Final minW = -6
+Maximum recursion level = 13
+Decomposition calls = 4503, of which with padding = 440
+number of lazy dijkstra rounds in small base case: mean = 1.0176, stddev = 1.4142, min = 1, max = 486, count = 12796471
+number of lazy dijkstra rounds in padding case: mean = 5.1543, stddev = 7.0711, min = 1, max = 125, count = 4503
+number of negative edges in decomposition: mean = 3643.3, stddev = 29850, min = 0, max = 5.0684e+05, count = 4503
+Maximum SCC sizes in admissible graph: mean = 0.99734, stddev = 0, min = 0, max = 1, count = 4503
+
+PADSCALING: inner loop all: mean = 3.037e+05 ms, stddev = 0 ms, min = 3.037e+05 ms, max = 3.037e+05 ms
+
+GOR: inner loop all: mean = 5428.7 ms, stddev = 0 ms, min = 5428.7 ms, max = 5428.7 ms
+
+
+Scaling iterarions = 36, Final minW = -6
+Maximum recursion level = 13
+Decomposition calls = 4554, of which with padding = 375
+number of lazy dijkstra rounds in small base case: mean = 1.0181, stddev = 1.4142, min = 1, max = 476, count = 12724265
+number of lazy dijkstra rounds in padding case: mean = 5.1392, stddev = 6.6332, min = 1, max = 119, count = 4554
+number of negative edges in decomposition: mean = 3561.1, stddev = 29651, min = 0, max = 5.0634e+05, count = 4554
+Maximum SCC sizes in admissible graph: mean = 0.99736, stddev = 0, min = 0, max = 1, count = 4554
+
+PADSCALING: inner loop all: mean = 2.9785e+05 ms, stddev = 0 ms, min = 2.9785e+05 ms, max = 2.9785e+05 ms
+
+
+
+Scaling iterarions = 36, Final minW = -6
+Maximum recursion level = 13
+Decomposition calls = 4066, of which with padding = 200
+number of lazy dijkstra rounds in small base case: mean = 1.0176, stddev = 1.4142, min = 1, max = 478, count = 11859188
+number of lazy dijkstra rounds in padding case: mean = 5.0391, stddev = 6.5574, min = 1, max = 115, count = 4066
+number of negative edges in decomposition: mean = 3771.1, stddev = 31040, min = 0, max = 5.05e+05, count = 4066
+Maximum SCC sizes in admissible graph: mean = 0.99631, stddev = 0, min = 0, max = 1, count = 4066
+
+PADSCALING: inner loop all: mean = 2.4998e+05 ms, stddev = 0 ms, min = 2.4998e+05 ms, max = 2.4998e+05 ms
+
+
+
+
+Average: 3681.1 ms. std: 37.847 ms. min: 3647.9 ms. max: 3755 ms.
+
+Average: 3753.4 ms. std: 22.04 ms. min: 3726.8 ms. max: 3779.5 ms. (GOR + cycle detection)
+
+Average: 10077 ms. std: 65.604 ms. min: 10021 ms. max: 10200 ms.

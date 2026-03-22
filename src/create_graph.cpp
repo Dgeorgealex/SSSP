@@ -201,7 +201,7 @@ GraphInfo create_complete_graph(const ArgsType& args) {
     return {n, edges};
 }
 
-GraphInfo create_cycle(const ArgsType& args) {
+GraphInfo create_cycle_graph(const ArgsType& args) {
     NodeID n = convertStringToInt<NodeID>(args[0]);
 
     FullEdges edges;
@@ -229,29 +229,29 @@ GraphInfo load_graph(const ArgsType& args) {
     return {n, edges};
 }
 
-GraphInfo create_random_graph(const ArgsType& args) {
-    NodeID n = convertStringToInt<NodeID>(args[0]);
-    double p = std::stod(args[1]);
-    RandIntGen<int> gen(120);
-
-
-    FullEdges edges;
-    for (NodeID i = 0; i < n; i++) {
-        for (NodeID j = 0; j < n; j++) {
-            if (i != j) {
-                edges.emplace_back(i, j, gen() - 60);
-            }
-        }
-    }
-
-    // Shuffle the indices randomly
-    std::random_device rd;
-    std::mt19937 g(rd());
-    std::shuffle(edges.begin(), edges.end(), g);
-    edges.resize(static_cast<EdgeID>(p * n * (n - 1)));
-
-    return {n, edges};
-}
+// GraphInfo create_random_graph(const ArgsType& args) {
+//     NodeID n = convertStringToInt<NodeID>(args[0]);
+//     double p = std::stod(args[1]);
+//     RandIntGen<int> gen(120);
+//
+//
+//     FullEdges edges;
+//     for (NodeID i = 0; i < n; i++) {
+//         for (NodeID j = 0; j < n; j++) {
+//             if (i != j) {
+//                 edges.emplace_back(i, j, gen() - 60);
+//             }
+//         }
+//     }
+//
+//     // Shuffle the indices randomly
+//     std::random_device rd;
+//     std::mt19937 g(rd());
+//     std::shuffle(edges.begin(), edges.end(), g);
+//     edges.resize(static_cast<EdgeID>(p * n * (n - 1)));
+//
+//     return {n, edges};
+// }
 
 GraphInfo create_random_restricted_graph4(const ArgsType& args) {
     NodeID n = convertStringToInt<NodeID>(args[0]);
@@ -344,6 +344,78 @@ GraphInfo create_random_restricted_graph3(const ArgsType& args) {
     return graph;
 }
 
+GraphInfo create_random_graph(const ArgsType& args) {
+    NodeID n = convertStringToInt<NodeID>(args[0]);
+    double p = std::stod(args[1]);
+
+    FullEdges edges = augment_graph(n, {}, p, 0);
+
+    return {n, edges};
+}
+
+GraphInfo create_random_graph_grid(const ArgsType& args) {
+    // TODO()
+}
+
+void increase_edges(NodeID n, FullEdges &edges) {
+    int INCREASE = 400000; // Double the edge values
+    RandIntGen<Distance> gen(INCREASE);
+
+    for (auto &[tail, head, weight] : edges)
+        if (weight >= 0)
+            weight += gen();
+}
+
+void decrease_edges(NodeID n, FullEdges &edges) {
+    int DECREASE = 10000;  // Small decrease
+    RandIntGen<Distance> gen(DECREASE);
+
+    for (auto &[tail, head, weight] : edges)
+        if (weight < 0)
+            weight -= gen();
+}
+
+void potential_transformation(NodeID n, FullEdges &edges) {
+    int MIN_POTENTIAL = 0, MAX_POTENTIAL = 300000;
+    RandIntGen<Distance> gen(MAX_POTENTIAL - MIN_POTENTIAL);
+
+    Distances potential(n, 0);
+    for (NodeID i = 0; i < n; i++)
+        potential[i] = MIN_POTENTIAL + gen();
+
+    for (auto &[tail, head, weight] : edges)
+        weight += potential[tail] - potential[head];
+}
+
+void add_cycle_to_graph(NodeID n, FullEdges &edges, int add_cycle) {
+    if (add_cycle == 0)
+        return;
+
+    int length = 0;
+    if (add_cycle == 1)
+        length = 3;
+
+    if (add_cycle == 2)
+        length = sqrt(n);
+
+    if (add_cycle == 3)
+        length = n - 5;
+
+    std::vector<NodeID> perm(n);
+    for (NodeID i = 0; i < n; ++i) perm[i] = i;
+
+    for (NodeID i = n - 1; i > 0; --i) {
+        RandIntGen<NodeID> gen(i);
+        NodeID j = gen();
+        std::swap(perm[i], perm[j]);
+    }
+
+    for (NodeID i = 0; i < length; ++i)
+        edges.emplace_back(perm[i], perm[(i + 1) % length], static_cast<Distance>(0));
+
+    edges.emplace_back(perm[length-1], perm[0], static_cast<Distance>(-1));
+}
+
 GraphInfo scaling_step(const ArgsType& args) {
     GraphInfo graph = load_graph(args);
 
@@ -390,39 +462,75 @@ int main(int argc, char* argv[]) {
 
     // Handle arguments
     ArgsType args;
-    bool do_perm = false;
-    bool e_increase = false;
-    std::tuple<bool, double, Distance> augment = {false, 0.0, 0};  // Do augmentation, fraction of edges, fixed weight
     bool mute = false;
+    bool do_perm = false;
+
+    // Do augmentation, fraction of edges, fixed weight
+    // Only for BAD instances
+    std::tuple<bool, double, Distance> augment = {false, 0.0, 0};
+
+    bool e_increase = false;
+    bool e_decrease = false;
+    bool p_transformation = false;
+    int add_cycle = 0;
+
 
     for (int i = 2; i < argc; i++) {
+        // permutation
         if (std::string(argv[i]) == "-p") {
             do_perm = true;
             continue;
-        } else if (std::string(argv[i]) == "-e") {
-            e_increase = true;
-            continue;
-        } else if (std::string(argv[i]) == "-m") {
-            mute = true;
-            continue;
-        } else if (std::string(argv[i]) == "-a") {
+        }
+        //augmentation
+        if (std::string(argv[i]) == "-a") {
             if (i + 2 >= argc) {
                 std::cerr << "Invalid number of arguments for -a (need 2: fraction of edges (less than 1) or multiplicative factor (greater than 1) and fixed weight)" << std::endl;
                 return 1;
-            } else {
-                augment = {true, std::stod(argv[i + 1]), convertStringToInt<Distance>(argv[i + 2])};
-                i += 2;  // the for loop will increase i by an additional 1
-                continue;
             }
+            augment = {true, std::stod(argv[i + 1]), convertStringToInt<Distance>(argv[i + 2])};
+            i += 2;  // the for loop will increase i by an additional 1
+            continue;
         }
-
+        //increase edges >= 0
+        if (std::string(argv[i]) == "-e") {
+            e_increase = true;
+            continue;
+        }
+        //decrease edges < 0
+        if (std::string(argv[i]) == "-d") {
+            e_decrease = true;
+            continue;
+        }
+        // potential transformation
+        if (std::string(argv[i]) == "-t") {
+            p_transformation = true;
+            continue;
+        }
+        // add cycle
+        if (std::string(argv[i]) == "-c") {
+            if (i + 1 >= argc) {
+                std::cerr << "Invalid number of arguments for -c (need 1: type of cycle to add)" << std::endl;
+                return 1;
+            }
+            add_cycle = convertStringToInt<int>(argv[i + 1]);
+            if (! (add_cycle >= 0 && add_cycle <= 3)) {
+                std::cerr << "Invalid cycle adding" << std::endl;
+                return 1;
+            }
+            i++;
+            continue;
+        }
+        // mute
+        if (std::string(argv[i]) == "-m") {
+            mute = true;
+        }
         args.push_back(argv[i]);
     }
 
     // Map graph type to function
     std::unordered_map<std::string, GraphCreatorType> graph_type_to_function = {
         {"complete_unit_graph", create_complete_graph},
-        {"cycle", create_cycle},
+        {"cycle", create_cycle_graph},
         {"load_graph", load_graph},
         {"random_graph", create_random_graph},
         {"random_restricted_graph3", create_random_restricted_graph3},
@@ -448,6 +556,15 @@ int main(int argc, char* argv[]) {
         edges.insert(edges.end(), new_edges.begin(), new_edges.end());
     }
 
+    if (e_increase) increase_edges(nodes, edges);
+    if (e_decrease) decrease_edges(nodes, edges);
+
+    add_cycle_to_graph(nodes, edges, add_cycle);
+
+    if (p_transformation) potential_transformation(nodes, edges);
+
+
+
     if (do_perm) {
         std::vector<NodeID> node_map(nodes);
         std::iota(node_map.begin(), node_map.end(), 0);
@@ -455,18 +572,6 @@ int main(int argc, char* argv[]) {
         for (auto & [tail, head, weight] : edges) {
             tail = node_map[tail];
             head = node_map[head];
-        }
-    }
-
-    if (e_increase) {
-        // std::random_device rd;
-        // std::mt19937 gen(rd());
-        RandIntGen<Distance>gen (5000);
-        for (FullEdge& edge : edges) {
-            Distance &weight = std::get<2>(edge);
-            if (weight > 0) {
-                weight += gen();
-            }
         }
     }
 

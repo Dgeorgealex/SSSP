@@ -4,7 +4,7 @@
 
 #include "pad.h"
 
-#include "bcf.h"
+#include "measurement_tool.h"
 
 Graph get_new_graph(const Graph &graph, const std::vector<bool> &u) {
     NodeID n = graph.numberOfNodes();
@@ -356,6 +356,11 @@ std::vector<Graph> padded_decomposition(Graph &graph, Distance diameter) {
         start_plus = start_minus = end = 0;
     }
 
+    if (n == 70690) {
+        PRINT("vol_u_plus = " << vol_u_plus);
+        PRINT("vol_u_minus = " << vol_u_minus);
+    }
+
     // We exited the loop = build the graphs
     PRINT("LIGHT");
     std::vector<Graph> X(2);
@@ -381,12 +386,15 @@ std::optional<Distances> pad::PADAlg::runMainAlg(Graph &graph, Distance diameter
     const NodeID n = graph.numberOfNodes();
     const EdgeID m = graph.numberOfEdges();
 
+    stats.max_recursion_level = std::max(level, stats.max_recursion_level);
+
     if (n <= config::pad_small) {
         Distances p(n, 0);
-        return bcf::runLazyDijkstra(graph, p);
+        stats.in_padding = false;
+        return runLazyDijkstra(graph, p, diameter, n + 2);
     }
 
-    // Compute 2-approx of the diameter
+    // Compute 2-approx of the diameter - ONE TIME I USE BCF
     const Distances &d_out = bcf::runDijkstra(graph, 0, c::infty, Orientation::OUT);
     const Distances &d_in = bcf::runDijkstra(graph, 0, c::infty, Orientation::IN);
 
@@ -397,14 +405,14 @@ std::optional<Distances> pad::PADAlg::runMainAlg(Graph &graph, Distance diameter
     if (diameter <= config::pad_rounds) {
         PRINT("END OF RECURSION - SMALL DIAMETER: " << diameter);
         Distances p(n, 0);
-        return bcf::runLazyDijkstra(graph, p, Orientation::OUT, diameter + 2);
+        return runLazyDijkstra(graph, p, diameter, diameter + 2);
     }
 
     PRINT("PADDED DECOMPOSITION: n = " << n << ", m = " << m << ", diameter = " << diameter);
     auto X = padded_decomposition(graph, diameter);
 
     NodeID H_n = 0;
-    for (const auto & i : X)
+    for (const auto &i: X)
         H_n += i.numberOfNodes();
 
     Distances phi(H_n);
@@ -465,30 +473,46 @@ std::optional<Distances> pad::PADAlg::runMainAlg(Graph &graph, Distance diameter
     PRINT("ADDING EDGES TO H");
     bool has_padding = false;
     std::vector<FullEdge> e;
+    int negative_edges = 0;
     for (int i = 0; i < n; i++) {
         if (membership[i].size() != 1)
             has_padding = true;
 
         for (auto edge: graph.getEdgesOf(i))
             for (auto u: membership[i])
-                for (auto v: membership[edge.target])
+                for (auto v: membership[edge.target]) {
                     e.emplace_back(u, v, edge.weight);
+                    if (edge.weight + phi[u] - phi[v] < 0)
+                        negative_edges++;
+                }
     }
+
+    MEASUREMENT::addInt(EXP::NEGATIVE_EDGES_IN_DECOMPOSITION, negative_edges);
+
     PRINT("CREATING H");
-    if (has_padding)
+    stats.decomposition_calls++;
+    if (has_padding) {
         PRINT("HAS PADDING");
+        stats.decomposition_calls_with_padding++;
+    }
     else
         PRINT("NO PADDING");
 
     auto H = Graph(H_n, e);
     PRINT("DONE CREATING");
 
-    PRINT("    RUNNING LAZY DIJKSTRA: H_n = " << H_n << ", e.size() = " << e.size() << ", n = " << n << ", m = " << m);
+    // RUN FAST CYCLE EXISTENCE TEST
+    PRINT("ADMISSIBLE GRAPH SEARCH");
+    if (fast_admissible_graph_check(H, phi))
+        return {};
+
+    PRINT("    RUNNING LAZY DIJKSTRA: H_n = " << H_n << ", e.size() = " << e.size() << ", n = " << n << ", m = " << m << ", diameter: " << diameter);
 
     std::optional<Distances> optional_H_potential;
-    if (config::pad_use_lazy)
-        optional_H_potential = bcf::runLazyDijkstra(H, phi, Orientation::OUT, config::pad_rounds * 2 + 1); // A max number of rounds
-    else
+    if (config::pad_use_lazy) {  // A max number of rounds OR stopping condition from scaling
+        stats.in_padding = true;
+        optional_H_potential = runLazyDijkstra(H, phi, diameter, config::pad_rounds * 2 + 1);
+    } else
         optional_H_potential = gor(H, phi);
 
     if (!optional_H_potential.has_value())
@@ -510,6 +534,283 @@ std::optional<Distances> pad::PADAlg::runMainAlg(Graph &graph, Distance diameter
     }
     PRINT("DONE LAZY DIJKSTRA");
     return potential;
+}
+
+bool pad::fast_admissible_graph_check(const Graph &graph, const Distances &potential) {
+    NodeID n = graph.numberOfNodes();
+
+    int scc_count = 0;
+    std::vector<int> scc(n, 0); // use as visitation vector (scc[i] = 0) means node visited
+    std::vector<bool> admissible(n, false);
+
+    std::vector<EdgeRange::iterator> Current(n), Current_T(n);
+    std::vector<EdgeRange> edgesOf(n), edgesOf_T(n);
+
+    for (NodeID i = 0; i < n; i++) {
+        edgesOf[i] = graph.getEdgesOf(i, Orientation::OUT);
+        edgesOf_T[i] = graph.getEdgesOf(i, Orientation::IN);
+
+        Current[i] = edgesOf[i].begin();
+        Current_T[i] = edgesOf_T[i].begin();
+    }
+
+    std::vector<int> topo_sort, dfs;
+    dfs.reserve(n);
+    topo_sort.reserve(n);
+
+    for (NodeID i = 0; i < n; i++) {
+        for (auto &edge: graph.getEdgesOf(i))
+            if (potential[i] + edge.weight <= potential[edge.target]) {
+                admissible[i] = true;
+                break;
+            }
+    }
+
+    for (NodeID i = 0; i < n; i++)
+        if (admissible[i] && scc[i] == 0) { // not yet visited...
+            dfs.push_back(i);
+
+            while (dfs.size() != 0) {
+                NodeID v = dfs.back();
+                dfs.pop_back();
+
+                bool found = false;
+                for (auto arc = Current[v]; arc != edgesOf[v].end() && !found; ++arc) {
+                    NodeID u = arc->target;
+
+                    if (!admissible[u] || scc[u] != 0) // Not admissible or visited
+                        continue;
+
+                    // if admissible edge
+                    if (potential[v] + arc->weight <= potential[u]) {
+                        Current[v] = arc;
+                        ++Current[v];
+
+                        dfs.push_back(v);
+
+                        scc[u] = 1;
+                        dfs.push_back(u);
+
+                        found = true;
+                    }
+                }
+
+               if (!found) {    // t_out
+                    topo_sort.push_back(v);
+               }
+            }
+        }
+
+    // reset scc vector
+    for (auto it: topo_sort)
+        scc[it] = 0;
+
+    for (auto it: std::views::reverse(topo_sort)) {
+        if (scc[it] != 0)
+            continue;
+
+        scc_count++;
+        scc[it] = scc_count;
+        dfs.push_back(it);
+
+        while (dfs.size() != 0) {
+            NodeID v = dfs.back();
+            dfs.pop_back();
+
+            for (auto arc = Current_T[v]; arc != edgesOf_T[v].end(); ++arc) {
+                NodeID u = arc->target;
+
+                if (!admissible[u])
+                    continue;
+
+                if (potential[u] + arc->weight <= potential[v]) {
+                    bool negative = (potential[u] + arc->weight <= potential[v]);
+
+                    if (scc[u] == scc[v] && negative)
+                        return true;
+
+                    if (scc[u] == 0) {
+                        if (negative)
+                            return true;
+
+                        Current_T[v] = ++arc;
+                        dfs.push_back(v);
+
+                        scc[u] = scc_count;
+                        dfs.push_back(u);
+
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    std::vector<NodeID> scc_size(scc_count, 0);
+    NodeID maxx = 0;
+    for (int i = 0; i < n; i++)
+        if (scc[i])
+            scc_size[scc[i]-1]++;
+
+    for (int i = 0 ; i < scc_count; i++)
+        maxx = std::max(maxx, scc_size[i]);
+
+    MEASUREMENT::addInt(EXP::SCC_ADMISSIBLE_GRAPH, maxx);
+    return false;
+}
+
+std::optional<Distances> pad::runLazyDijkstra(const Graph &graph, const Distances &potential, Distance diameter,
+                                              int max_rounds) {
+    NodeID n = graph.numberOfNodes();
+    Distances distance(n, c::infty);
+    Distances positive(n, 0);
+    std::vector<NodeID> bellman_phase;
+    GraphHeap q(n);
+    int rounds = 0;
+
+
+    bellman_phase.reserve(n);
+    // This is done using potentials
+    for (NodeID i = 0; i < n; i++) {
+        distance[i] = -potential[i];
+        q.insert(i, distance[i]);
+    }
+
+    while (!q.empty()) {
+        if (rounds == max_rounds) {
+            PRINT("MAX ROUNDS REACHED: " << max_rounds);
+            return {};
+        }
+
+        // run Dijkstra phase
+        bellman_phase.clear();
+        while (!q.empty()) {
+            Distance dist;
+            NodeID from;
+            q.deleteMin(from, dist);
+
+            if (dist > distance[from]) continue;
+
+            //Here I think I should put the early break condition: I can close the cycle
+             if (distance[from] + potential[from] < 0 && positive[from] > diameter) {
+                 if (stats.in_padding)
+                     MEASUREMENT::addInt(EXP::LAZY_IN_PADDING, rounds);
+                 else
+                     MEASUREMENT::addInt(EXP::LAZY_IN_SMALL, rounds);
+
+                 PRINT("    HEURISTIC WORKS");
+                 return {};
+             }
+
+            bellman_phase.emplace_back(from);
+
+            for (auto const &edge: graph.getEdgesOf(from)) {
+                Distance weight = edge.weight + potential[from] - potential[edge.target];
+
+                if (weight < 0)
+                    continue;
+
+                auto tentative_dist = distance[from] + weight;
+                if (tentative_dist < distance[edge.target]) {
+                    distance[edge.target] = tentative_dist;
+                    positive[edge.target] = positive[from] + std::max(static_cast<Distance>(0), edge.weight);
+
+                    q.insert(edge.target, tentative_dist);
+                }
+            }
+        }
+
+        // Relax all negative edges from vertices explored in dijkstra phase
+        for (auto const &from: bellman_phase)
+            for (auto const &edge: graph.getEdgesOf(from)) {
+                auto weight = edge.weight + potential[from] - potential[edge.target];
+
+                //if (weight >= 0) continue;
+
+                auto tentative_dist = distance[from] + weight;
+                if (tentative_dist <= distance[edge.target]) {
+
+                    if (tentative_dist < distance[edge.target]) {
+                        distance[edge.target] = tentative_dist;
+                        q.insert(edge.target, tentative_dist);
+
+                        positive[edge.target] = positive[from] + std::max(static_cast<Distance>(0), edge.weight);
+                    } else {
+                        positive[edge.target] = std::max(positive[edge.target], positive[from] + std::max(static_cast<Distance>(0), edge.weight));
+                    }
+                }
+            }
+
+        rounds++;
+    }
+
+    if (stats.in_padding)
+        MEASUREMENT::addInt(EXP::LAZY_IN_PADDING, rounds);
+    else
+        MEASUREMENT::addInt(EXP::LAZY_IN_SMALL, rounds);
+
+    if (rounds > 1)
+        PRINT("    rounds of lazy dijkstra: " << rounds);
+
+    return distance;
+}
+
+std::optional<Distances> pad::scaling_early_finish(const Graph &graph, const Graph &current_graph, NodeID source) {
+    NodeID n = graph.numberOfNodes();
+    // Dijkstra for the tree
+    std::vector<NodeID> p(n, -1);
+    Distances distances(n, c::infty);
+    distances[source] = 0;
+    AddressableKHeap<4, NodeID, Distance> q(n);
+    q.insert(source, 0);
+
+    while (!q.empty()) {
+        Distance dist;
+        NodeID from;
+        q.deleteMin(from, dist);
+        if (dist > distances[from]) continue;
+        for (auto const& edge : current_graph.getEdgesOf(from)) {
+            auto tentative_dist = distances[from] + std::max(static_cast<Distance>(0), edge.weight);
+            if (tentative_dist < distances[edge.target]) {
+                p[edge.target] = from;
+                distances[edge.target] = tentative_dist;
+                q.insert(edge.target, tentative_dist);
+            }
+        }
+    }
+
+    // Compute the final distances on the original graph
+    std::fill(distances.begin(), distances.end(), c::infty);
+
+    std::vector<std::vector<std::pair<NodeID, Distance>>> adj(n);
+    for (NodeID v = 0; v < n; v++)
+        for (auto e:graph.getEdgesOf(v))
+            if (v == p[e.target])
+                distances[e.target] = std::min(distances[e.target], e.weight);
+
+    for (NodeID v = 0; v < n; v++)
+        if (p[v] != -1)
+            adj[p[v]].emplace_back(v, distances[v]);
+
+    // final DFS
+    distances[source] = 0;
+    std::vector<NodeID> st; st.reserve(n);
+    st.push_back(source);
+
+    while (!st.empty()) {
+        NodeID v = st.back();
+        st.pop_back();
+
+        for (const auto&[u, w] : adj[v]) {
+            distances[u] = distances[v] + w;
+            st.push_back(u);
+        }
+    }
+
+    if (isResultCorrect(graph, distances, source))
+        return distances;
+
+    return{};
 }
 
 // pad

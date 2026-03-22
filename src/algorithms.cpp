@@ -46,6 +46,10 @@ std::string to_string(SSSPAlg const& alg) {
             return "BFCT";
         case SSSPAlg::LazyD:
             return "LazyD";
+        case SSSPAlg::PADSCALING:
+            return "PADSCALING";
+        case SSSPAlg::PAD:
+            return "PAD";
     }
     return "Unknown SSSP algorithm";
 }
@@ -271,18 +275,18 @@ std::optional<Distances> PAD(Graph &graph, NodeID source) {
     return FinalDijkstraFP(graph, potential, source);
 }
 
-void finalDFS(NodeID node, const std::vector<std::vector<std::pair<NodeID, Distance>>> &adj, Distances& distances) {
-    for (auto [next, d] : adj[node]) {
-        distances[next] = distances[node] + d;
-        finalDFS(next, adj, distances);
-    }
-}
-
 std::optional<Distances> PADSCALING(Graph &graph, NodeID source) {
+    // reset statistcs:
+    MEASUREMENT::reset(EXP::LAZY_IN_SMALL);
+    MEASUREMENT::reset(EXP::LAZY_IN_PADDING);
+    MEASUREMENT::reset(EXP::NEGATIVE_EDGES_IN_DECOMPOSITION);
+    MEASUREMENT::reset(EXP::SCC_ADMISSIBLE_GRAPH);
+    pad::stats.reset();
+
     auto alg = pad::PADAlg();
     const NodeID n = graph.numberOfNodes();
 
-    Distance minW = graph.minWeight(), maxW = graph.maxWeight();    // Assume for now that minW < 0
+    Distance minW, maxW;  // Assume for now that minW < 0 always
     int iterations = 0;
 
     Graph current_graph = graph;
@@ -295,9 +299,22 @@ std::optional<Distances> PADSCALING(Graph &graph, NodeID source) {
         maxW = current_graph.maxWeight();
         PRINT("MIN_W = " << minW << ", MAX_W = " << maxW);
 
-        if (minW == -1)
-            break;
 
+        pad::stats.scaling_iterations = iterations;
+        pad::stats.final_minW = minW;
+
+        // Can we finish earlier???
+        auto opt_d = pad::scaling_early_finish(graph, current_graph, source);
+        if (opt_d.has_value()) {
+            PRINT("ITERATIONS = " << iterations);
+            return opt_d.value();
+        }
+
+        if (minW == -1) {
+            PRINT("ITERATIONS = " << iterations);
+            PRINT("SOMETHING NOT GOOD HAPPENED");
+            exit(-1);
+        }
         Graph working_graph = current_graph;
         working_graph.addWeight((-minW + 1)/2);
 
@@ -317,48 +334,6 @@ std::optional<Distances> PADSCALING(Graph &graph, NodeID source) {
 
         current_graph.applyPotential(potential);
     }
-
-    PRINT("ITERATIONS = " << iterations);
-
-    // Dijkstra for the tree
-    std::vector<NodeID> p(n, -1);
-    Distances distances(n, c::infty);
-    distances[source] = 0;
-    AddressableKHeap<4, NodeID, Distance> q(n);
-    q.insert(source, 0);
-
-    while (!q.empty()) {
-        Distance dist;
-        NodeID from;
-        q.deleteMin(from, dist);
-        if (dist > distances[from]) continue;
-        for (auto const& edge : current_graph.getEdgesOf(from)) {
-            auto tentative_dist = distances[from] + std::max(static_cast<Distance>(0), edge.weight);
-            if (tentative_dist < distances[edge.target]) {
-                p[edge.target] = from;
-                distances[edge.target] = tentative_dist;
-                q.insert(edge.target, tentative_dist);
-            }
-        }
-    }
-
-    // Compute the final distances on the original graph
-    std::fill(distances.begin(), distances.end(), c::infty);
-
-    std::vector<std::vector<std::pair<NodeID, Distance>>> adj(n);
-    for (NodeID v = 0; v < n; v++)
-        for (auto e:graph.getEdgesOf(v))
-            if (v == p[e.target])
-                distances[e.target] = std::min(distances[e.target], e.weight);
-
-    for (NodeID v = 0; v < n; v++)
-        if (p[v] != -1)
-            adj[p[v]].emplace_back(v, distances[v]);
-
-    distances[source] = 0;
-    finalDFS(source, adj, distances);
-
-    return distances;
 }
 // Algorithm as described in Section 5.1 of CGGTW paper.
 std::optional<Distances> BFCT(Graph const& graph, NodeID source) {
@@ -536,7 +511,7 @@ bool isResultCorrect(Graph const& graph, Distances const& distances, NodeID sour
     // and we check that for at least one incoming edge of v, dist(v) == dist(u) + w(u, v).
     // If the node has no incoming edges, we check that dist(v) == inf.
 
-    const bool constexpr verbose = true;
+    const bool constexpr verbose = false;
 
     if (distances.size() != graph.numberOfNodes()) {
         if constexpr (verbose) {

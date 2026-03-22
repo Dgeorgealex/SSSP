@@ -68,8 +68,8 @@ namespace config {
     int eg_sort_scc = 0;  // 0 -> no edge sorting during SCC, 1 -> edge sorting during SCC
 
     int pad_small = 500;
-    int pad_rounds = 1500;       // Number of LazyDijkstra rounds -> used for restricted graph detection
-    long long pad_alpha = 8;    // Padding ratio
+    int pad_rounds = 4000;       // Number of LazyDijkstra rounds -> used for restricted graph detection :: BUG with 600 rd1 c2
+    long long pad_alpha = 3;    // Padding ratio
     int pad_use_lazy = 1;   // 0 -> use GOR, 1 -> use LazyDijkstra
 
     std::string shift_filename = std::string();

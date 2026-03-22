@@ -6,9 +6,12 @@
 #define NEGATIVEWEIGHTSHORTESTPATH_PAD_H
 
 #include <optional>
-#include "defs.h"
 #include "graph.h"
 #include "heap.h"
+#include <ranges>
+#include "defs.h"
+#include "bcf.h"
+#include "algorithms.h"
 
 namespace pad {
     using GraphHeap = AddressableKHeap<4, NodeID, Distance>;
@@ -19,6 +22,32 @@ namespace pad {
 
         std::optional<Distances> runMainAlg(Graph &graph, Distance diameter, int level = 0);
     };
+
+    bool fast_admissible_graph_check(const Graph &graph, const Distances &potential);
+
+    std::optional<Distances> runLazyDijkstra(const Graph& graph, const Distances& potential, Distance diameter, int max_rounds);
+
+    std::optional<Distances> scaling_early_finish(const Graph &graph, const Graph &current_graph, NodeID source);
+
+    struct PADStats {
+        bool in_padding = false;
+        int scaling_iterations = 0;
+        int max_recursion_level = 0;
+        Distance final_minW = static_cast<Distance>(-1);
+        int decomposition_calls = 0;
+        int decomposition_calls_with_padding = 0;
+
+        void reset() {
+            in_padding = false;
+            scaling_iterations = 0;
+            max_recursion_level = 0;
+            final_minW = static_cast<Distance>(-1);
+            decomposition_calls = 0;
+            decomposition_calls_with_padding = 0;
+        }
+    };
+
+    inline PADStats stats{};
 } // pad
 
 EdgeID grow_ball(Distance new_d, int &start, int end, const std::vector<Distance> &d,
