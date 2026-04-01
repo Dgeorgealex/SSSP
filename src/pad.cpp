@@ -30,6 +30,10 @@ Graph get_new_graph(const Graph &graph, const std::vector<bool> &u) {
 EdgeID grow_ball(const Distance new_d, int &start, const int end, const std::vector<Distance> &d,
                  const std::vector<NodeID> &order,
                  const std::vector<EdgeID> &vol, const Distance diameter) {
+
+    if (end == 0) // NO ELEMENTS IN THE BALL YET
+        return 0;
+
     const Distance delta = diameter / config::pad_rounds;
 
     if (new_d == d[order[end]])
@@ -55,13 +59,11 @@ std::pair<int, int> grow_ball_heavy(const Graph &graph, Distance diameter, std::
                                     Orientation orientation) {
     NodeID n = graph.numberOfNodes();
     int start = 0, end = 0;
-    pad::GraphHeap q(n + 1);
+    pad::GraphHeap q(n);
     Distances d(n, c::infty);
-    std::vector<EdgeID> volumes(n, 0);
+    std::vector<EdgeID> volumes(n + 1, 0);
 
     d[s] = 0;
-    order[0] = s;
-    volumes[0] = graph.getDegreeOf(s);
 
     q.insert(s, 0);
 
@@ -132,7 +134,7 @@ std::vector<Graph> padded_decomposition_heavy(const Graph &graph, Distance diame
     PRINT("HEAVY");
     NodeID n = graph.numberOfNodes();
 
-    std::vector<NodeID> order_plus(n), order_minus(n);
+    std::vector<NodeID> order_plus(n + 1, 0), order_minus(n + 1, 0);
 
     auto [start_plus, end_plus] = grow_ball_heavy(graph, diameter, order_plus, s, Orientation::OUT);
     auto [start_minus, end_minus] = grow_ball_heavy(graph, diameter, order_minus, s, Orientation::IN);
@@ -142,9 +144,9 @@ std::vector<Graph> padded_decomposition_heavy(const Graph &graph, Distance diame
     std::vector<int> intersect(n);
     std::vector<bool> u(n, false);
 
-    for (int i = 0; i <= end_plus; i++)
+    for (int i = 1; i <= end_plus; i++)
         intersect[order_plus[i]]++;
-    for (int i = 0; i <= end_minus; i++)
+    for (int i = 1; i <= end_minus; i++)
         intersect[order_minus[i]]++;
     for (int i = 0; i < n; i++)
         if (intersect[i] == 2)
@@ -152,14 +154,14 @@ std::vector<Graph> padded_decomposition_heavy(const Graph &graph, Distance diame
     X[2] = get_new_graph(graph, u);
 
     u.assign(u.size(), false);
-    for (int i = 0; i <= end_plus; i++)
+    for (int i = 1; i <= end_plus; i++)
         u[order_plus[i]] = true;
-    for (int i = 0; i <= start_minus; i++)
+    for (int i = 1; i <= start_minus; i++)
         u[order_minus[i]] = false;
     X[0] = get_new_graph(graph, u);
 
     u.assign(u.size(), true);
-    for (int i = 0; i <= start_plus; i++)
+    for (int i = 1; i <= start_plus; i++)
         u[order_plus[i]] = false;
     X[1] = get_new_graph(graph, u);
 
@@ -184,15 +186,11 @@ std::vector<Graph> padded_decomposition(Graph &graph, Distance diameter) {
     Distances d_plus(n, c::infty);
     Distances d_minus(n, c::infty);
 
-    std::vector<NodeID> order_plus(n, 0);
-    std::vector<NodeID> order_minus(n, 0);
+    std::vector<NodeID> order_plus(n + 1, 0);
+    std::vector<NodeID> order_minus(n + 1, 0);
 
-    std::vector<EdgeID> volumes_plus(n, 0);
-    std::vector<EdgeID> volumes_minus(n, 0);
-
-    int start_plus = 0;
-    int start_minus = 0;
-    int end = 0;
+    std::vector<EdgeID> volumes_plus(n + 1, 0);
+    std::vector<EdgeID> volumes_minus(n + 1, 0);
 
     NodeID s = 0;
     while (vol_u_plus * 2 < m && vol_u_minus * 2 < m) {
@@ -205,15 +203,10 @@ std::vector<Graph> padded_decomposition(Graph &graph, Distance diameter) {
         d_plus[s] = 0;
         d_minus[s] = 0;
 
-        order_plus[0] = s;
-        order_minus[0] = s;
-
-        volumes_plus[0] = graph.getDegreeOf(s);
-        volumes_minus[0] = graph.getDegreeOf(s);
-
         q_plus.insert(s, 0);
         q_minus.insert(s, 0);
 
+        int start_plus = 1, start_minus = 1, end = 0;
         EdgeID ball_plus = 0, ball_minus = 0;
 
         while (true) {
@@ -222,7 +215,7 @@ std::vector<Graph> padded_decomposition(Graph &graph, Distance diameter) {
             bool plus_not_done = false, minus_not_done = false;
 
 
-            if (!q_plus.empty()) {
+            if (!q_plus.empty() && ball_plus == 0) {
                 Distance dist_plus;
                 plus_not_done = true;
                 q_plus.deleteMin(from_plus, dist_plus);
@@ -233,7 +226,7 @@ std::vector<Graph> padded_decomposition(Graph &graph, Distance diameter) {
             }
 
 
-            if (!q_minus.empty()) {
+            if (!q_minus.empty() && ball_minus == 0) {
                 Distance dist_minus;
                 minus_not_done = true;
                 q_minus.deleteMin(from_minus, dist_minus);
@@ -313,7 +306,7 @@ std::vector<Graph> padded_decomposition(Graph &graph, Distance diameter) {
         if (ball_plus <= ball_minus) {
             vol_u_plus += ball_plus;
             // update u_plus and padding vectors
-            for (int i = 0; i <= start_plus; i++) {
+            for (int i = 1; i <= start_plus; i++) {
                 u_plus[order_plus[i]] = true;
                 pad_plus[order_plus[i]] = true;
             }
@@ -323,7 +316,7 @@ std::vector<Graph> padded_decomposition(Graph &graph, Distance diameter) {
         } else {
             vol_u_minus += ball_minus;
             // update u_minus and padding vectors
-            for (int i = 0; i <= start_minus; i++) {
+            for (int i = 1; i <= start_minus; i++) {
                 u_minus[order_minus[i]] = true;
                 pad_minus[order_minus[i]] = true;
             }
@@ -334,7 +327,7 @@ std::vector<Graph> padded_decomposition(Graph &graph, Distance diameter) {
 
 
         // reset all
-        for (int i = 0; i <= end; i++) {
+        for (int i = 1; i <= end; i++) {
             d_plus[order_plus[i]] = d_minus[order_minus[i]] = c::infty;
             volumes_plus[i] = volumes_minus[i] = 0;
             order_plus[i] = order_minus[i] = 0;
@@ -352,13 +345,6 @@ std::vector<Graph> padded_decomposition(Graph &graph, Distance diameter) {
             q_minus.deleteMin(v, d);
             d_minus[v] = c::infty;
         }
-
-        start_plus = start_minus = end = 0;
-    }
-
-    if (n == 70690) {
-        PRINT("vol_u_plus = " << vol_u_plus);
-        PRINT("vol_u_minus = " << vol_u_minus);
     }
 
     // We exited the loop = build the graphs
@@ -391,7 +377,10 @@ std::optional<Distances> pad::PADAlg::runMainAlg(Graph &graph, Distance diameter
     if (n <= config::pad_small) {
         Distances p(n, 0);
         stats.in_padding = false;
-        return runLazyDijkstra(graph, p, diameter, n + 2);
+        if (config::cycle_detection)
+            return runLazyDijkstra(graph, p, diameter, n + 2);
+
+        return runLazyDijkstra(graph, p, diameter, -1); // NO CYCLE DETECTION = GO UNTIL END
     }
 
     // Compute 2-approx of the diameter - ONE TIME I USE BCF
@@ -405,7 +394,10 @@ std::optional<Distances> pad::PADAlg::runMainAlg(Graph &graph, Distance diameter
     if (diameter <= config::pad_rounds) {
         PRINT("END OF RECURSION - SMALL DIAMETER: " << diameter);
         Distances p(n, 0);
-        return runLazyDijkstra(graph, p, diameter, diameter + 2);
+        if (config::cycle_detection)
+            return runLazyDijkstra(graph, p, diameter, diameter + 2);
+
+        return runLazyDijkstra(graph, p, diameter, -1);
     }
 
     PRINT("PADDED DECOMPOSITION: n = " << n << ", m = " << m << ", diameter = " << diameter);
@@ -494,24 +486,22 @@ std::optional<Distances> pad::PADAlg::runMainAlg(Graph &graph, Distance diameter
     if (has_padding) {
         PRINT("HAS PADDING");
         stats.decomposition_calls_with_padding++;
-    }
-    else
+    } else
         PRINT("NO PADDING");
 
     auto H = Graph(H_n, e);
     PRINT("DONE CREATING");
 
-    // RUN FAST CYCLE EXISTENCE TEST
-    PRINT("ADMISSIBLE GRAPH SEARCH");
-    if (fast_admissible_graph_check(H, phi))
-        return {};
-
-    PRINT("    RUNNING LAZY DIJKSTRA: H_n = " << H_n << ", e.size() = " << e.size() << ", n = " << n << ", m = " << m << ", diameter: " << diameter);
-
+    PRINT("    RUNNING LAZY DIJKSTRA: H_n = " << H_n << ", e.size() = " << e.size() << ", n = " << n << ", m = " << m <<
+        ", diameter: " << diameter);
     std::optional<Distances> optional_H_potential;
-    if (config::pad_use_lazy) {  // A max number of rounds OR stopping condition from scaling
+    if (config::pad_use_lazy) {
+        // A max number of rounds OR stopping condition from scaling
         stats.in_padding = true;
-        optional_H_potential = runLazyDijkstra(H, phi, diameter, config::pad_rounds * 2 + 1);
+        if (config::cycle_detection)
+            optional_H_potential = runLazyDijkstra(H, phi, diameter, -1); // .onfig::pad_rounds * 2 + 1); TODO
+        else
+            optional_H_potential = runLazyDijkstra(H, phi, diameter, -1);
     } else
         optional_H_potential = gor(H, phi);
 
@@ -567,7 +557,8 @@ bool pad::fast_admissible_graph_check(const Graph &graph, const Distances &poten
     }
 
     for (NodeID i = 0; i < n; i++)
-        if (admissible[i] && scc[i] == 0) { // not yet visited...
+        if (admissible[i] && scc[i] == 0) {
+            // not yet visited...
             dfs.push_back(i);
 
             while (dfs.size() != 0) {
@@ -595,9 +586,10 @@ bool pad::fast_admissible_graph_check(const Graph &graph, const Distances &poten
                     }
                 }
 
-               if (!found) {    // t_out
+                if (!found) {
+                    // t_out
                     topo_sort.push_back(v);
-               }
+                }
             }
         }
 
@@ -650,9 +642,9 @@ bool pad::fast_admissible_graph_check(const Graph &graph, const Distances &poten
     NodeID maxx = 0;
     for (int i = 0; i < n; i++)
         if (scc[i])
-            scc_size[scc[i]-1]++;
+            scc_size[scc[i] - 1]++;
 
-    for (int i = 0 ; i < scc_count; i++)
+    for (int i = 0; i < scc_count; i++)
         maxx = std::max(maxx, scc_size[i]);
 
     MEASUREMENT::addInt(EXP::SCC_ADMISSIBLE_GRAPH, maxx);
@@ -677,6 +669,11 @@ std::optional<Distances> pad::runLazyDijkstra(const Graph &graph, const Distance
     }
 
     while (!q.empty()) {
+        if (config::cycle_detection && fast_admissible_graph_check(graph, potential))
+            // TODO I think this is a waste of time...
+            return {};
+
+        // PRINT("ROUNDS: " << rounds);
         if (rounds == max_rounds) {
             PRINT("MAX ROUNDS REACHED: " << max_rounds);
             return {};
@@ -692,15 +689,17 @@ std::optional<Distances> pad::runLazyDijkstra(const Graph &graph, const Distance
             if (dist > distance[from]) continue;
 
             //Here I think I should put the early break condition: I can close the cycle
-             if (distance[from] + potential[from] < 0 && positive[from] > diameter) {
-                 if (stats.in_padding)
-                     MEASUREMENT::addInt(EXP::LAZY_IN_PADDING, rounds);
-                 else
-                     MEASUREMENT::addInt(EXP::LAZY_IN_SMALL, rounds);
+            //Only available when scaling!! -> how to identify when scaling!!!
+            if (distance[from] + potential[from] < -diameter ) //(distance[from] + potential[from] < 0 && positive[from] * config::pad_scaling_factor > 2 * (config::pad_scaling_factor - 1) * diameter)) {
+            {
+                if (stats.in_padding)
+                    MEASUREMENT::addInt(EXP::LAZY_IN_PADDING, rounds);
+                else
+                    MEASUREMENT::addInt(EXP::LAZY_IN_SMALL, rounds);
 
-                 PRINT("    HEURISTIC WORKS");
-                 return {};
-             }
+                PRINT("    HEURISTIC WORKS");
+                return {};
+            }
 
             bellman_phase.emplace_back(from);
 
@@ -729,14 +728,15 @@ std::optional<Distances> pad::runLazyDijkstra(const Graph &graph, const Distance
 
                 auto tentative_dist = distance[from] + weight;
                 if (tentative_dist <= distance[edge.target]) {
-
                     if (tentative_dist < distance[edge.target]) {
                         distance[edge.target] = tentative_dist;
                         q.insert(edge.target, tentative_dist);
 
                         positive[edge.target] = positive[from] + std::max(static_cast<Distance>(0), edge.weight);
                     } else {
-                        positive[edge.target] = std::max(positive[edge.target], positive[from] + std::max(static_cast<Distance>(0), edge.weight));
+                        positive[edge.target] = std::max(positive[edge.target],
+                                                         positive[from] + std::max(
+                                                             static_cast<Distance>(0), edge.weight));
                     }
                 }
             }
@@ -761,7 +761,7 @@ std::optional<Distances> pad::scaling_early_finish(const Graph &graph, const Gra
     std::vector<NodeID> p(n, -1);
     Distances distances(n, c::infty);
     distances[source] = 0;
-    AddressableKHeap<4, NodeID, Distance> q(n);
+    GraphHeap q(n);
     q.insert(source, 0);
 
     while (!q.empty()) {
@@ -769,7 +769,7 @@ std::optional<Distances> pad::scaling_early_finish(const Graph &graph, const Gra
         NodeID from;
         q.deleteMin(from, dist);
         if (dist > distances[from]) continue;
-        for (auto const& edge : current_graph.getEdgesOf(from)) {
+        for (auto const &edge: current_graph.getEdgesOf(from)) {
             auto tentative_dist = distances[from] + std::max(static_cast<Distance>(0), edge.weight);
             if (tentative_dist < distances[edge.target]) {
                 p[edge.target] = from;
@@ -782,9 +782,9 @@ std::optional<Distances> pad::scaling_early_finish(const Graph &graph, const Gra
     // Compute the final distances on the original graph
     std::fill(distances.begin(), distances.end(), c::infty);
 
-    std::vector<std::vector<std::pair<NodeID, Distance>>> adj(n);
+    std::vector<std::vector<std::pair<NodeID, Distance> > > adj(n);
     for (NodeID v = 0; v < n; v++)
-        for (auto e:graph.getEdgesOf(v))
+        for (auto e: graph.getEdgesOf(v))
             if (v == p[e.target])
                 distances[e.target] = std::min(distances[e.target], e.weight);
 
@@ -794,14 +794,15 @@ std::optional<Distances> pad::scaling_early_finish(const Graph &graph, const Gra
 
     // final DFS
     distances[source] = 0;
-    std::vector<NodeID> st; st.reserve(n);
+    std::vector<NodeID> st;
+    st.reserve(n);
     st.push_back(source);
 
     while (!st.empty()) {
         NodeID v = st.back();
         st.pop_back();
 
-        for (const auto&[u, w] : adj[v]) {
+        for (const auto &[u, w]: adj[v]) {
             distances[u] = distances[v] + w;
             st.push_back(u);
         }
@@ -810,7 +811,7 @@ std::optional<Distances> pad::scaling_early_finish(const Graph &graph, const Gra
     if (isResultCorrect(graph, distances, source))
         return distances;
 
-    return{};
+    return {};
 }
 
 // pad
