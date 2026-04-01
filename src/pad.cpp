@@ -691,7 +691,6 @@ std::optional<Distances> pad::runLazyDijkstra(const Graph &graph, const Distance
             //Here I think I should put the early break condition: I can close the cycle
             //Only available when scaling!! -> how to identify when scaling!!!
             if (distance[from] + potential[from] < 0 && positive[from] * config::pad_scaling_factor > 2 * (config::pad_scaling_factor - 1) * diameter) {
-            {
                 if (stats.in_padding)
                     MEASUREMENT::addInt(EXP::LAZY_IN_PADDING, rounds);
                 else
