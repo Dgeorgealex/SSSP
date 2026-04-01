@@ -17,24 +17,24 @@ for sizes in "2 6"; do
             echo "../data/graphs/big_aug_${alg}_${coeff}e${pow}.base already exists, skipping..."
         fi
 
-#        mv ../data/graphs/big_aug_${alg}_${coeff}e${pow}.txt ../data/graphs/big_aug_${alg}_${coeff}e${pow}_backup.txt
-#
-#        # For iter in 1 to 4
-#        for ((iter=2; iter<=5; iter++)); do
-#
-#            if [ ! -f "../data/graphs/big_aug_${alg}_${coeff}e${pow}_v${iter}.txt" ]; then
-#                bash big_graph_creator.sh $coeff $pow ${alg} 6
-#
-#                # Delete temporary files
-#                rm ../data/graphs/big_aug_${alg}_${coeff}e${pow}_bare.txt
-#                rm ../data/graphs/big_aug_${alg}_${coeff}e${pow}_sorted.txt
-#                mv ../data/graphs/big_aug_${alg}_${coeff}e${pow}.txt ../data/graphs/big_aug_${alg}_${coeff}e${pow}_v${iter}.txt
-#            else
-#                echo "../data/graphs/big_aug_${alg}_${coeff}e${pow}_v${iter}.txt already exists, skipping..."
-#            fi
-#        done
-#
-#        mv ../data/graphs/big_aug_${alg}_${coeff}e${pow}_backup.txt ../data/graphs/big_aug_${alg}_${coeff}e${pow}.txt
+        mv ../data/graphs/big_aug_${alg}_${coeff}e${pow}.base ../data/graphs/big_aug_${alg}_${coeff}e${pow}_backup.txt
+
+        # For iter 2, 3
+        for ((iter=2; iter<=3; iter++)); do
+
+            if [ ! -f "../data/graphs/big_aug_${alg}_${coeff}e${pow}_v${iter}.base" ]; then
+                bash big_graph_creator.sh $coeff $pow ${alg} 6
+
+                # Delete temporary files
+                rm ../data/graphs/big_aug_${alg}_${coeff}e${pow}_bare.txt
+                rm ../data/graphs/big_aug_${alg}_${coeff}e${pow}_sorted.txt
+                mv ../data/graphs/big_aug_${alg}_${coeff}e${pow}.base ../data/graphs/big_aug_${alg}_${coeff}e${pow}_v${iter}.base
+            else
+                echo "../data/graphs/big_aug_${alg}_${coeff}e${pow}_v${iter}.base already exists, skipping..."
+            fi
+        done
+
+        mv ../data/graphs/big_aug_${alg}_${coeff}e${pow}_backup.txt ../data/graphs/big_aug_${alg}_${coeff}e${pow}.base
 
     done
 
@@ -50,15 +50,15 @@ for sizes in "2 6"; do
         echo "../data/graphs/big_rand_${coeff}e${pow}.base already exists, skipping..."
     fi
 
-#    for ((iter=2; iter<=5; iter++)); do
-#        if [ ! -f "../data/graphs/big_rand_${coeff}e${pow}_v${iter}.txt" ]; then
-#            echo "Creating random restricted graph with $nrand nodes and ${coeff}e${pow} edges, with p = ${p}..."
-#            ../build/CreateGraph random_restricted_graph4 $nrand $p > ../data/graphs/big_rand_${coeff}e${pow}_v${iter}.txt
-#        else
-#            echo "../data/graphs/big_rand_${coeff}e${pow}_v${iter}.txt already exists, skipping..."
-#        fi
-#    done
-#
+    for ((iter=2; iter<=3; iter++)); do
+        if [ ! -f "../data/graphs/big_rand_${coeff}e${pow}_v${iter}.base" ]; then
+            echo "Creating random restricted graph with $nrand nodes and ${coeff}e${pow} edges, with p = ${p}..."
+            ../build/CreateGraph random_graph $nrand $p > ../data/graphs/big_rand_${coeff}e${pow}_v${iter}.base
+        else
+            echo "../data/graphs/big_rand_${coeff}e${pow}_v${iter}.base already exists, skipping..."
+        fi
+    done
+
 done
 
 #

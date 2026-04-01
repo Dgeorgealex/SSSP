@@ -159,29 +159,24 @@ std::string getFilenameWithoutExtension(const std::string& filename) {
     }
 }
 
+std::string getPrefixedFilenameInSameFolder(const std::string& filename, const std::string& prefix) {
+    std::filesystem::path path(filename);
+    std::filesystem::path parent = path.parent_path();
+    std::string prefixed_name = prefix + path.filename().string();
+    return (parent / prefixed_name).string();
+}
+
 
 bool handleCorrectness(std::optional<Distances> const& result, const Graph& graph, SSSPData const& data, NodeID number_of_nodes) {
-
-    if (data.algorithm == SSSPAlg::PAD) {
-        std::string filename_stats = getFilenameWithoutExtension(data.graph_filename) + "_statistics.txt";
-        std::ofstream ofs(filename_stats);
-
-        ofs << "Scaling iterarions = " << pad::stats.scaling_iterations << ", " << "Final minW = " << pad::stats.final_minW << std::endl;
-        ofs << "Maximum recursion level = " << pad::stats.max_recursion_level << std::endl;
-        ofs << "Decomposition calls = " << pad::stats.decomposition_calls << ", of which with padding = " << pad::stats.decomposition_calls_with_padding << std::endl;
-        MEASUREMENT::print(EXP::LAZY_IN_SMALL, ofs);
-        MEASUREMENT::print(EXP::LAZY_IN_PADDING, ofs);
-        MEASUREMENT::print(EXP::NEGATIVE_EDGES_IN_DECOMPOSITION, ofs);
-        MEASUREMENT::print(EXP::SCC_ADMISSIBLE_GRAPH, ofs);
-        ofs << std::endl;
-    }
-
     // Get the name of the file with the result
-    std::string filename_check = getFilenameWithoutExtension(data.graph_filename) + "_result" + std::to_string(data.source) + ".txt";
+    std::string filename_check = getFilenameWithoutExtension(getPrefixedFilenameInSameFolder(
+        data.graph_filename, "result" + std::to_string(data.source) + "_")) + ".txt";
     std::ifstream ifs(filename_check);
 
     // This is the possible filename in case the result is wrong, for debugging purposes
-    std::string wrong_filename_check = getFilenameWithoutExtension(data.graph_filename) + "_wrong" + std::to_string(data.source) + "_" + to_string(data.algorithm) + ".txt";
+    std::string wrong_filename_check = getFilenameWithoutExtension(getPrefixedFilenameInSameFolder(
+        data.graph_filename,
+        "wrong" + std::to_string(data.source) + "_" + to_string(data.algorithm) + "_")) + ".txt";
 
     bool check_file_exists = ifs.good();
     ifs.close();
@@ -193,7 +188,7 @@ bool handleCorrectness(std::optional<Distances> const& result, const Graph& grap
         if (distances_check.size() == 1 && distances_check[0] == -1) {
             check_file_neg_cycle = true;
         } else if (distances_check.size() != graph.numberOfNodes()) {
-            std::string filename_unknown = getFilenameWithoutExtension(data.graph_filename) + "_unknown.txt";
+            std::string filename_unknown = getFilenameWithoutExtension(getPrefixedFilenameInSameFolder(data.graph_filename, "unknown_")) + ".txt";
             std::filesystem::rename(filename_check.c_str(), filename_unknown.c_str());
             check_file_exists = false;
         } else {
@@ -264,6 +259,49 @@ bool handleCorrectness(std::optional<Distances> const& result, const Graph& grap
     return true;
 }
 
+void printPADStatistics(SSSPData const &data) {
+    if (!(data.algorithm == SSSPAlg::PAD || data.algorithm == SSSPAlg::PADSCALING))
+        return;
+
+    std::string filename_stats = getFilenameWithoutExtension(getPrefixedFilenameInSameFolder(data.graph_filename, "statistics_")) + ".txt";
+    std::ofstream ofs(filename_stats, std::ios::app);
+
+    ofs << "\n\n";
+
+    ofs << to_string(data.algorithm) << " - " << std::filesystem::path(data.graph_filename).filename().string() <<
+            " - cycle detection = " << config::cycle_detection << '\n';
+    ofs << '\t' << "Scaling iterations = " << pad::stats.scaling_iterations << ", " << "Final minW = " << pad::stats.
+            final_minW << '\n';
+    ofs << '\t' << "Maximum recursion level = " << pad::stats.max_recursion_level << '\n';
+    ofs << '\t' << "Decomposition calls = " << pad::stats.decomposition_calls << ", of which with padding = " <<
+            pad::stats.decomposition_calls_with_padding << '\n';
+    ofs << '\t';
+    MEASUREMENT::print(EXP::LAZY_IN_SMALL, ofs);
+    ofs << '\t';
+    MEASUREMENT::print(EXP::LAZY_IN_PADDING, ofs);
+    ofs << '\t';
+    MEASUREMENT::print(EXP::NEGATIVE_EDGES_IN_DECOMPOSITION, ofs);
+    ofs << '\t';
+    MEASUREMENT::print(EXP::SCC_ADMISSIBLE_GRAPH, ofs);
+}
+
+void printTime(SSSPData const& data) {
+    std::string filename_stats = getFilenameWithoutExtension( getPrefixedFilenameInSameFolder(data.graph_filename, "time_")) + ".txt";
+    std::ofstream ofs(filename_stats, std::ios::app);
+
+    ofs << "\n\n";
+
+    ofs << to_string(data.algorithm) << " - " << std::filesystem::path(data.graph_filename).filename().string() << " - " <<
+        "cycle detection = " << config::cycle_detection << " - ";
+
+    MEASUREMENT::print(EXP::INNER_LOOP_ALL, ofs);
+
+    if (data.algorithm == SSSPAlg::PAD || data.algorithm == SSSPAlg::PADSCALING) {
+        ofs << "pad_rounds = " << config::pad_rounds << " - " << "pad_alpha = " << config::pad_alpha;
+        if (data.algorithm == SSSPAlg::PADSCALING)
+            ofs << " - pad_scaling_factor = " << config::pad_scaling_factor;
+    }
+}
 
 ExpTime timeQuery(SSSPData const& data, Graph& graph) {
     auto progressBar = [](double progress, unsigned int barLength) {
@@ -294,11 +332,8 @@ ExpTime timeQuery(SSSPData const& data, Graph& graph) {
     }
     std::clog << std::endl << std::flush;
 
-        std::string filename_stats = getFilenameWithoutExtension(data.graph_filename) + "_statistics.txt";
-        std::ofstream ofs(filename_stats, std::ios::app);
-        ofs << to_string(data.algorithm) << ": ";
-        MEASUREMENT::print(EXP::INNER_LOOP_ALL, ofs);
-        ofs << std::endl;
+    printPADStatistics(data);
+    printTime(data);
 
     std::ostringstream oss;
     MEASUREMENT::print(EXP::INNER_LOOP_ALL, oss);

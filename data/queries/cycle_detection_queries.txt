@@ -1,0 +1,51 @@
+SSSP time GOR ../data/graphs/big_aug_bfct_2e6_t.txt 0 3
+SSSP time PADSCALING ../data/graphs/big_aug_bfct_2e6_t.txt 0 3
+
+SSSP time GOR ../data/graphs/big_aug_bfct_2e6_c1.txt 0 3
+SSSP time PADSCALING ../data/graphs/big_aug_bfct_2e6_c1.txt 0 3
+
+SSSP time GOR ../data/graphs/big_aug_bfct_2e6_c2.txt 0 3
+SSSP time PADSCALING ../data/graphs/big_aug_bfct_2e6_c2.txt 0 3
+
+SSSP time GOR ../data/graphs/big_aug_bfct_2e6_c3.txt 0 3
+SSSP time PADSCALING ../data/graphs/big_aug_bfct_2e6_c3.txt 0 3
+
+
+SSSP time GOR ../data/graphs/big_aug_gor_2e6_t.txt 0 3
+SSSP time PADSCALING ../data/graphs/big_aug_gor_2e6_t.txt 0 3
+
+SSSP time GOR ../data/graphs/big_aug_gor_2e6_c1.txt 0 3
+SSSP time PADSCALING ../data/graphs/big_aug_gor_2e6_c1.txt 0 3
+
+SSSP time GOR ../data/graphs/big_aug_gor_2e6_c2.txt 0 3
+SSSP time PADSCALING ../data/graphs/big_aug_gor_2e6_c2.txt 0 3
+
+SSSP time GOR ../data/graphs/big_aug_gor_2e6_c3.txt 0 3
+SSSP time PADSCALING ../data/graphs/big_aug_gor_2e6_c3.txt 0 3
+
+
+SSSP time GOR ../data/graphs/big_aug_rd1_2e6_t.txt 0 3
+SSSP time PADSCALING ../data/graphs/big_aug_rd1_2e6_t.txt 0 3
+
+SSSP time GOR ../data/graphs/big_aug_rd1_2e6_c1.txt 0 3
+SSSP time PADSCALING ../data/graphs/big_aug_rd1_2e6_c1.txt 0 3
+
+SSSP time GOR ../data/graphs/big_aug_rd1_2e6_c2.txt 0 3
+SSSP time PADSCALING ../data/graphs/big_aug_rd1_2e6_c2.txt 0 3
+
+SSSP time GOR ../data/graphs/big_aug_rd1_2e6_c3.txt 0 3
+SSSP time PADSCALING ../data/graphs/big_aug_rd1_2e6_c3.txt 0 3
+
+
+SSSP time GOR ../data/graphs/big_rand_2e6.base 0 3
+SSSP time PADSCALING ../data/graphs/big_rand_2e6.base 0 3
+
+SSSP time GOR ../data/graphs/big_rand_2e6_c1.txt 0 3
+SSSP time PADSCALING ../data/graphs/big_rand_2e6_c1.txt 0 3
+
+SSSP time GOR ../data/graphs/big_rand_2e6_c2.txt 0 3
+SSSP time PADSCALING ../data/graphs/big_rand_2e6_c2.txt 0 3
+
+SSSP time GOR ../data/graphs/big_rand_2e6_c3.txt 0 3
+SSSP time PADSCALING ../data/graphs/big_rand_2e6_c3.txt 0 3
+

@@ -897,7 +897,7 @@ std::optional<Distances> gor_with_cycles(Graph &G, std::variant<NodeID, const Di
 
                     auto pot_edge_w = arc->weight;
                     if (using_potential) {
-                        pot_edge_w = (*potential)[u] - (*potential)[v];
+                        pot_edge_w += (*potential)[u] - (*potential)[v];
                     }
 
                     if (pot_edge_w + dist[u] <= dist[v]) {
@@ -962,9 +962,15 @@ std::optional<Distances> gor_with_cycles(Graph &G, std::variant<NodeID, const Di
 
 
 std::optional<Distances> gor(Graph &G, NodeID source) {
-    return gor_with_cycles(G, std::variant<NodeID, const Distances *>(source));
+    if (config::cycle_detection)
+        return gor_with_cycles(G, std::variant<NodeID, const Distances *>(source));
+
+    return gor(G, std::variant<NodeID, const Distances *>(source));
 }
 
 std::optional<Distances> gor(Graph &G, const Distances &potential) {
-    return gor_with_cycles(G, std::variant<NodeID, const Distances *>(&potential));
+    if (config::cycle_detection)
+        return gor_with_cycles(G, std::variant<NodeID, const Distances *>(&potential));
+
+    return gor(G, std::variant<NodeID, const Distances *>(&potential));
 }

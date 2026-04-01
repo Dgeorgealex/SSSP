@@ -3,6 +3,8 @@
 #include <string>
 
 namespace config {
+    extern bool cycle_detection; // For all algorithms = run the cycle detection variant
+
     extern int use_lazy;      // 0 -> use GOR, 1 -> use LazyDijkstra //
     extern int init_kappa;    // 0 -> use number of nodes, 1 -> use infinity xx check on my own
     extern int k_factor;      // by what factor to reduce the number of Dijkstra calls //
@@ -17,11 +19,12 @@ namespace config {
     extern int eg_sort_scc;   // 0 -> no edge sorting during SCC, 1 -> edge sorting during SCC xx check on my own
     extern std::string shift_filename;  // name of shifted graph
 
-
     // For PADDED Decomposition
     extern int pad_small;
     extern int pad_rounds;
+    extern int pad_scaling_factor;
     extern long long pad_alpha;
     extern int pad_use_lazy;
+
     int setup_config(int argc, char** argv);
 }

@@ -316,7 +316,7 @@ std::optional<Distances> PADSCALING(Graph &graph, NodeID source) {
             exit(-1);
         }
         Graph working_graph = current_graph;
-        working_graph.addWeight((-minW + 1)/2);
+        working_graph.addWeight((-minW + (config::pad_scaling_factor - 1))/config::pad_scaling_factor);
 
         Distances potential(n);
 

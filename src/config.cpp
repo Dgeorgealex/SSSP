@@ -54,6 +54,8 @@ std::pair<std::string, std::string> parseString(const std::string& input) {
 }
 
 namespace config {
+    bool cycle_detection = true;
+
     int use_lazy = 1;  // 0 -> use GOR, 1 -> use LazyDijkstra
     int init_kappa = 0;  // 0 -> use number of nodes, 1 -> use infinity
     int k_factor = 40;  // by what factor to reduce the number of Dijkstra calls
@@ -68,7 +70,8 @@ namespace config {
     int eg_sort_scc = 0;  // 0 -> no edge sorting during SCC, 1 -> edge sorting during SCC
 
     int pad_small = 500;
-    int pad_rounds = 4000;       // Number of LazyDijkstra rounds -> used for restricted graph detection :: BUG with 600 rd1 c2
+    int pad_rounds = 520;       // Number of LazyDijkstra rounds -> used for restricted graph detection :: BUG with 600 rd1 c2
+    int pad_scaling_factor = 8;
     long long pad_alpha = 3;    // Padding ratio
     int pad_use_lazy = 1;   // 0 -> use GOR, 1 -> use LazyDijkstra
 
@@ -139,7 +142,10 @@ namespace config {
                 }
             } else if (arg == "shift_filename") {
                 shift_filename = val;
-            } else {
+            } else if (arg == "pad_rounds") {
+                pad_rounds = std::stoi(val);
+            }
+            else {
                 ERROR("Unknown argument: " << arg);
             }
         };
