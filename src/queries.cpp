@@ -1,6 +1,8 @@
 #include "queries.h"
 
+#include <chrono>
 #include <fstream>
+#include <iomanip>
 #include <limits>
 #include <sstream>
 #include <string>
@@ -268,6 +270,12 @@ void printPADStatistics(SSSPData const &data) {
 
     ofs << "\n\n";
 
+    auto now = std::chrono::system_clock::now();
+    auto time_t = std::chrono::system_clock::to_time_t(now);
+    auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()) % 1000;
+    ofs << "[" << std::put_time(std::localtime(&time_t), "%Y-%m-%d %H:%M:%S") << "." 
+        << std::setfill('0') << std::setw(3) << ms.count() << "] \n";
+
     ofs << to_string(data.algorithm) << " - " << std::filesystem::path(data.graph_filename).filename().string() <<
             " - cycle detection = " << config::cycle_detection << '\n';
     ofs << '\t' << "Scaling iterations = " << pad::stats.scaling_iterations << ", " << "Final minW = " << pad::stats.
@@ -275,6 +283,7 @@ void printPADStatistics(SSSPData const &data) {
     ofs << '\t' << "Maximum recursion level = " << pad::stats.max_recursion_level << '\n';
     ofs << '\t' << "Decomposition calls = " << pad::stats.decomposition_calls << ", of which with padding = " <<
             pad::stats.decomposition_calls_with_padding << '\n';
+    ofs << '\t' << "Heavy Decomposition calls  = " << pad::stats.heavy_calls << '\n';
     ofs << '\t';
     MEASUREMENT::print(EXP::LAZY_IN_SMALL, ofs);
     ofs << '\t';
@@ -283,6 +292,14 @@ void printPADStatistics(SSSPData const &data) {
     MEASUREMENT::print(EXP::NEGATIVE_EDGES_IN_DECOMPOSITION, ofs);
     ofs << '\t';
     MEASUREMENT::print(EXP::SCC_ADMISSIBLE_GRAPH, ofs);
+
+    MEASUREMENT::print(EXP::INNER_LOOP_ALL, ofs);
+
+    if (data.algorithm == SSSPAlg::PAD || data.algorithm == SSSPAlg::PADSCALING) {
+        ofs << "pad_rounds = " << config::pad_rounds << " - " << "pad_alpha = " << config::pad_alpha;
+        if (data.algorithm == SSSPAlg::PADSCALING)
+            ofs << " - pad_scaling_factor = " << config::pad_scaling_factor;
+    }
 }
 
 void printTime(SSSPData const& data) {
@@ -290,6 +307,12 @@ void printTime(SSSPData const& data) {
     std::ofstream ofs(filename_stats, std::ios::app);
 
     ofs << "\n\n";
+
+    auto now = std::chrono::system_clock::now();
+    auto time_t = std::chrono::system_clock::to_time_t(now);
+    auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()) % 1000;
+    ofs << "[" << std::put_time(std::localtime(&time_t), "%Y-%m-%d %H:%M:%S") << "." 
+        << std::setfill('0') << std::setw(3) << ms.count() << "] \n";
 
     ofs << to_string(data.algorithm) << " - " << std::filesystem::path(data.graph_filename).filename().string() << " - " <<
         "cycle detection = " << config::cycle_detection << " - ";

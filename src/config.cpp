@@ -70,7 +70,7 @@ namespace config {
     int eg_sort_scc = 0;  // 0 -> no edge sorting during SCC, 1 -> edge sorting during SCC
 
     int pad_small = 500;
-    int pad_rounds = 520;       // Number of LazyDijkstra rounds -> used for restricted graph detection :: BUG with 600 rd1 c2
+    int pad_rounds = 1000;       // Number of LazyDijkstra rounds -> used for restricted graph detection :: BUG with 600 rd1 c2
     int pad_scaling_factor = 8;
     long long pad_alpha = 3;    // Padding ratio
     int pad_use_lazy = 1;   // 0 -> use GOR, 1 -> use LazyDijkstra
@@ -144,8 +144,11 @@ namespace config {
                 shift_filename = val;
             } else if (arg == "pad_rounds") {
                 pad_rounds = std::stoi(val);
-            }
-            else {
+            } else if (arg == "pad_alpha") {
+                pad_alpha = std::stoi(val);
+            } else if (arg == "pad_scaling_factor") {
+                pad_scaling_factor = std::stoi(val);
+            } else {
                 ERROR("Unknown argument: " << arg);
             }
         };

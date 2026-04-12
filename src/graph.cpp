@@ -30,6 +30,10 @@ EdgeRange Graph::getEdges(Orientation orientation) const {
     return orientation == Orientation::OUT ? EdgeRange(&edges[0], edges.size()) : EdgeRange(&edges_rev[0], edges_rev.size());
 }
 
+EdgeID Graph::getAllDegreeOf(NodeID source) const {
+    return offsets[source+1] - offsets[source] + offsets_rev[source+1] - offsets_rev[source];
+}
+
 EdgeID Graph::getDegreeOf(NodeID source, Orientation orientation) const {
     if (orientation == Orientation::OUT)
         return offsets[source+1] - offsets[source];

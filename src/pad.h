@@ -36,6 +36,7 @@ namespace pad {
         Distance final_minW = static_cast<Distance>(-1);
         int decomposition_calls = 0;
         int decomposition_calls_with_padding = 0;
+        int heavy_calls = 0;
 
         void reset() {
             in_padding = false;
@@ -44,6 +45,7 @@ namespace pad {
             final_minW = static_cast<Distance>(-1);
             decomposition_calls = 0;
             decomposition_calls_with_padding = 0;
+            heavy_calls = 0;
         }
     };
 
@@ -60,4 +62,6 @@ std::pair<int, int> grow_ball_heavy(const Graph &graph, Distance diameter, std::
                                     Orientation orientation);
 
 std::vector<Graph> padded_decomposition_heavy(const Graph &graph, Distance diameter, NodeID s);
+
+void padding_check(const Graph &graph, const std::vector<bool> &u, const std::vector<bool> &pad, Distance diameter, Orientation orientation);
 #endif //NEGATIVEWEIGHTSHORTESTPATH_PAD_H
