@@ -109,19 +109,27 @@ Distance Graph::maxWeight() {
 }
 
 void Graph::addWeight(Distance w) {
-    for (EdgeID i = 0; i < edges.size(); i++)
+    for (EdgeID i = 0; i < edges.size(); i++) {
         edges[i].weight += w;
+        edges_rev[i].weight += w;
+    }
 }
 
 void Graph::scaleWeights(Distance w) {
-    for (EdgeID i = 0; i < edges.size(); i++)
+    for (EdgeID i = 0; i < edges.size(); i++) {
         edges[i].weight *= w;
+        edges_rev[i].weight *= w;
+    }
 }
 
 void Graph::applyPotential(const Distances &potential) {
-    for (NodeID v = 0; v < number_of_nodes; v++)
+    for (NodeID v = 0; v < number_of_nodes; v++) {
         for (int i = offsets[v]; i < offsets[v + 1]; i++)
             edges[i].weight = edges[i].weight + potential[v] - potential[edges[i].target];
+
+        for (int i = offsets_rev[v]; i < offsets_rev[v + 1]; i++)
+            edges_rev[i].weight = edges_rev[i].weight + potential[edges_rev[i].target] - potential[v];
+    }
 }
 
 

@@ -127,7 +127,7 @@ std::pair<int, int> grow_ball_heavy(const Graph &graph, Distance diameter, std::
         grow_ball(c::infty, start, end, d, order, volumes, diameter);
 
 
-    //TODO() remove check //////////////////////////////////////////////////////////////////////////////////////////////
+    //TODO remove check //////////////////////////////////////////////////////////////////////////////////////////////
     if (volumes[start] < graph.numberOfEdges() || d[order[end]] > diameter / 5 + 1) {
         PRINT("INCORRECT HEAVY LIMITS");
         exit(-1);
@@ -166,19 +166,19 @@ std::vector<Graph> padded_decomposition_heavy(const Graph &graph, Distance diame
     for (int i = 0; i < n; i++)
         if (intersect[i] == 2)
             u[i] = true;
-    X[2] = get_new_graph(graph, u);
+    X[0] = get_new_graph(graph, u);
 
     u.assign(u.size(), false);
     for (int i = 1; i <= end_plus; i++)
         u[order_plus[i]] = true;
     for (int i = 1; i <= start_minus; i++)
         u[order_minus[i]] = false;
-    X[0] = get_new_graph(graph, u);
+    X[1] = get_new_graph(graph, u);
 
     u.assign(u.size(), true);
     for (int i = 1; i <= start_plus; i++)
         u[order_plus[i]] = false;
-    X[1] = get_new_graph(graph, u);
+    X[2] = get_new_graph(graph, u);
 
     return X;
 }
@@ -258,7 +258,7 @@ std::vector<Graph> padded_decomposition(Graph &graph, Distance diameter) {
             if (ball_plus && ball_minus)
                 break;
 
-            if ((ball_plus || ball_minus) && (ball_plus < m && ball_minus < m))
+            if ((ball_plus || ball_minus) && (ball_plus <= m && ball_minus <= m))
                 break;
 
 
@@ -396,7 +396,7 @@ std::vector<Graph> padded_decomposition(Graph &graph, Distance diameter) {
     return X;
 }
 
-std::optional<Distances> pad::PADAlg::runMainAlg(Graph &graph, Distance diameter, int level) {
+std::optional<Distances> pad::runMainAlg(Graph &graph, Distance diameter, int level) {
     const NodeID n = graph.numberOfNodes();
     const EdgeID m = graph.numberOfEdges();
 
@@ -405,10 +405,7 @@ std::optional<Distances> pad::PADAlg::runMainAlg(Graph &graph, Distance diameter
     if (n <= config::pad_small) {
         Distances p(n, 0);
         stats.in_padding = false;
-        if (config::cycle_detection)
-            return runLazyDijkstra(graph, p, diameter, n + 2);
-
-        return runLazyDijkstra(graph, p, diameter, -1); // NO CYCLE DETECTION = GO UNTIL END
+        return runLazyDijkstra(graph, p, diameter, n + 2);
     }
 
     // Compute 2-approx of the diameter - ONE TIME I USE BCF
@@ -422,10 +419,7 @@ std::optional<Distances> pad::PADAlg::runMainAlg(Graph &graph, Distance diameter
     if (diameter <= config::pad_rounds) {
         PRINT("END OF RECURSION - SMALL DIAMETER: " << diameter);
         Distances p(n, 0);
-        if (config::cycle_detection)
-            return runLazyDijkstra(graph, p, diameter, diameter + 2);
-
-        return runLazyDijkstra(graph, p, diameter, -1);
+        return runLazyDijkstra(graph, p, diameter, diameter + 2);
     }
 
     PRINT("PADDED DECOMPOSITION: n = " << n << ", m = " << m << ", diameter = " << diameter);
@@ -449,7 +443,7 @@ std::optional<Distances> pad::PADAlg::runMainAlg(Graph &graph, Distance diameter
     for (int i = 0; i < X.size(); i++) {
         Distances potential(X[i].numberOfNodes());
         auto components = decomposeIntoSCCs(X[i]);
-        Distance cDiameter = (i < 2) ? diameter : (diameter / 2 + 1);
+        Distance cDiameter = (i == 0 && X.size()==3) ? (diameter/2 + 1) : diameter;
 
         PRINT("RECURSING ON - " << components.size() << " PROBLEMS");
         for (auto &component: components) {
@@ -512,10 +506,7 @@ std::optional<Distances> pad::PADAlg::runMainAlg(Graph &graph, Distance diameter
     if (config::pad_use_lazy) {
         // A max number of rounds OR stopping condition from scaling
         stats.in_padding = true;
-        if (config::cycle_detection)
-            optional_H_potential = runLazyDijkstra(H, phi, diameter, -1);
-        else
-            optional_H_potential = runLazyDijkstra(H, phi, diameter, -1);
+        optional_H_potential = runLazyDijkstra(H, phi, diameter, -1);
     } else
         optional_H_potential = gor(H, phi);
 
@@ -550,6 +541,7 @@ std::optional<Distances> pad::runLazyDijkstra(const Graph &graph, const Distance
     std::vector<NodeID> bellman_phase;
     GraphHeap q(n);
     int rounds = 0;
+    Distance prev = 0;
 
 
     bellman_phase.reserve(n);
@@ -582,6 +574,7 @@ std::optional<Distances> pad::runLazyDijkstra(const Graph &graph, const Distance
                     MEASUREMENT::addInt(EXP::LAZY_IN_SMALL, rounds);
 
                 PRINT("    HEURISTIC WORKS");
+                PRINT("    ROUNDS = " << rounds);
                 return {};
             }
 
@@ -599,6 +592,11 @@ std::optional<Distances> pad::runLazyDijkstra(const Graph &graph, const Distance
                     positive[edge.target] = positive[from] + std::max(static_cast<Distance>(0), edge.weight);
 
                     q.insert(edge.target, tentative_dist);
+                } else if (tentative_dist == distance[edge.target]) {
+                    Distance tentative_positive = positive[from] + std::max(static_cast<Distance>(0), edge.weight);
+
+                    if (tentative_positive > positive[edge.target])
+                        positive[edge.target] = tentative_positive;
                 }
             }
         }
@@ -608,24 +606,40 @@ std::optional<Distances> pad::runLazyDijkstra(const Graph &graph, const Distance
             for (auto const &edge: graph.getEdgesOf(from)) {
                 auto weight = edge.weight + potential[from] - potential[edge.target];
 
-                //if (weight >= 0) continue;
+                if (weight >= 0) continue;
 
                 auto tentative_dist = distance[from] + weight;
-                if (tentative_dist <= distance[edge.target]) {
-                    if (tentative_dist < distance[edge.target]) {
-                        distance[edge.target] = tentative_dist;
-                        q.insert(edge.target, tentative_dist);
+                if (tentative_dist < distance[edge.target]) {
+                    distance[edge.target] = tentative_dist;
 
-                        positive[edge.target] = positive[from] + std::max(static_cast<Distance>(0), edge.weight);
-                    } else {
-                        positive[edge.target] = std::max(positive[edge.target],
-                                                         positive[from] + std::max(
-                                                             static_cast<Distance>(0), edge.weight));
-                    }
+                    positive[edge.target] = positive[from] + std::max(static_cast<Distance>(0), edge.weight);
+
+                    q.insert(edge.target, tentative_dist);
+                } else if (tentative_dist == distance[edge.target]) {
+                    Distance tentative_positive = positive[from] + std::max(static_cast<Distance>(0), edge.weight);
+
+                    if (tentative_positive > positive[edge.target])
+                        positive[edge.target] = tentative_positive;
                 }
             }
 
         rounds++;
+
+        //TODO remove check //////////////////////////////////////////////////////////////////////////////////////////////
+        if (rounds % 5 == 0) {
+            Distance maxx = 0;
+            for (NodeID v = 0; v < n; v++)
+                maxx = std::max(maxx, positive[v]);
+
+            if (maxx - prev < diameter / config::pad_rounds && n > config::pad_small) {
+                PRINT("    SMALL DELTA");
+                PRINT("    round = " << rounds);
+                PRINT("    maxx - prev = " << maxx - prev);
+                PRINT("    diameter / pad_rounds = " << diameter / config::pad_rounds);
+            }
+            prev = maxx;
+        }
+        ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     }
 
     if (stats.in_padding)
@@ -873,12 +887,95 @@ void padding_check(const Graph &graph, const std::vector<bool> &u, const std::ve
     }
 
     for (int i = 0; i < n; i++)
-        if (!pad[i] && d[i] < diameter / config::pad_rounds) {
-            PRINT("PADDING DISTANCE NOT OK: BUG3");
-            exit(-1);
-        }
+        if (!u[i] && pad[i] && d[i] == 0)
+                PRINT("NODE IN PADDING HAS DISTANCE 0: BUG3");
+
+    for (int i = 0; i < n; i++)
+        if (pad[i])
+            for (auto edge: graph.getEdgesOf(i, orientation))
+                if (edge.weight <= 0 && !pad[edge.target])
+                    PRINT("BUG4");
 }
 
-void check_cycle_correctness() {
-    //TODO
+void symmetric_graph(const Graph &graph) {
+    NodeID n = graph.numberOfNodes();
+    std::vector<std::vector<std::pair<NodeID, Distance>>> plus(n), minus(n);
+
+    for (NodeID v = 0; v < n; v++) {
+        for (auto edge:graph.getEdgesOf(v))
+            plus[v].emplace_back(edge.target, edge.weight);
+        for (auto edge:graph.getEdgesOf(v, Orientation::IN))
+            minus[edge.target].emplace_back(v, edge.weight);
+    }
+
+    for (NodeID v = 0; v < n; v++) {
+        std::sort(plus[v].begin(), plus[v].end());
+        std::sort(minus[v].begin(), minus[v].end());
+
+        if (plus[v] != minus[v]) {
+            PRINT("BUG5");
+            exit(-1);
+        }
+    }
 }
+
+/*
+void put_cycle_in_file(const NodeID &n, const NodeID &from, const std::vector<NodeID> &parents) {
+    std::vector<bool> seen(n, false);
+    std::vector<NodeID> cycle;
+    NodeID current_node = from;
+    while (parents[current_node] != -1 && !seen[current_node]) {
+        cycle.push_back(current_node);
+        seen[current_node] = true;
+        current_node = parents[current_node];
+    }
+    PRINT("CYCLE LENGHT = " << cycle.size());
+
+    if (parents[current_node] != -1) {
+        // we found a cycle here
+        int i;
+        for (i = 0; ; i++)
+            if (cycle[i] == current_node)
+                break;
+
+        cycle.erase(cycle.begin(), cycle.begin() + i);
+    }
+    cycle.push_back(current_node);
+
+    std::ofstream fout("cycle.txt");
+    fout << cycle.size() << '\n';
+    for (auto it:cycle)
+        fout << it << '\n';
+}
+
+void check_cycle_correctness(const Graph &graph) {
+    std::ifstream fin("cycle.txt");
+    NodeID l;
+    std::vector<NodeID> cycle;
+    fin >> l;
+    for (int i = 0; i < l; i++) {
+        NodeID node;
+        fin >> node;
+        cycle.push_back(node);
+    }
+
+    const Distances &d = bcf::runDijkstra(graph, cycle[l-1], c::infty, Orientation::OUT);
+
+    Distance cycle_length = d[cycle[0]];
+    for (int i = 0; i < l - 1; i++) {
+        Distance min_d = c::infty;
+        for (auto &edge:graph.getEdgesOf(cycle[i]))
+            if (edge.target == cycle[i+1])
+                min_d = std::min(min_d, edge.weight);
+
+        if (min_d == c::infty)
+            exit(-1);
+        cycle_length += min_d;
+    }
+
+    if (cycle_length >= 0){
+        PRINT("THE REPORTED CYCLE IS NOT NEGATIVE");
+        exit(-1);
+    }
+}
+*/

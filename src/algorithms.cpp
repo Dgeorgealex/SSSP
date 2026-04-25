@@ -248,7 +248,6 @@ std::optional<Distances> BCF(Graph& graph, NodeID source) {
 }
 
 std::optional<Distances> PAD(Graph &graph, NodeID source) {
-    auto alg = pad::PADAlg();
     const NodeID n = graph.numberOfNodes();
 
     Distances potential(n);
@@ -259,7 +258,7 @@ std::optional<Distances> PAD(Graph &graph, NodeID source) {
     for (auto &component: components) {
         // ADD here the (n * m) upper bound on the diameter
         // NodeID n = component.numberOfNodes(); EdgeID m = component.numberOfEdges();
-        auto opt_component_potential = alg.runMainAlg(component, c::infty);
+        auto opt_component_potential = pad::runMainAlg(component, c::infty);
 
         if (!opt_component_potential.has_value())  // Found a cycle
             return {};
@@ -283,7 +282,6 @@ std::optional<Distances> PADSCALING(Graph &graph, NodeID source) {
     MEASUREMENT::reset(EXP::SCC_ADMISSIBLE_GRAPH);
     pad::stats.reset();
 
-    auto alg = pad::PADAlg();
     const NodeID n = graph.numberOfNodes();
 
     Distance minW, maxW;  // Assume for now that minW < 0 always
@@ -318,12 +316,16 @@ std::optional<Distances> PADSCALING(Graph &graph, NodeID source) {
         Graph working_graph = current_graph;
         working_graph.addWeight((-minW + (config::pad_scaling_factor - 1))/config::pad_scaling_factor);
 
+        //TODO remove check //////////////////////////////////////////////////////////////////////////////////////////////
+        symmetric_graph(working_graph);
+        ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
         Distances potential(n);
 
         auto components = decomposeIntoSCCs(working_graph);
         for (auto &component: components) {
-            auto opt_component_potential = alg.runMainAlg(component, c::infty);
-            if (!opt_component_potential.has_value())  // Found a cycle
+            auto opt_component_potential = pad::runMainAlg(component, c::infty);
+            if (!opt_component_potential.has_value())
                 return {};
             auto component_potential = std::move(opt_component_potential.value());
             for (NodeID i = 0; i < component.numberOfNodes(); i++)

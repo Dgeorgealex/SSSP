@@ -16,12 +16,7 @@
 namespace pad {
     using GraphHeap = AddressableKHeap<4, NodeID, Distance>;
 
-    class PADAlg {
-    public:
-        PADAlg() = default;
-
-        std::optional<Distances> runMainAlg(Graph &graph, Distance diameter, int level = 0);
-    };
+    std::optional<Distances> runMainAlg(Graph &graph, Distance diameter, int level = 0);
 
     bool fast_admissible_graph_check(const Graph &graph, const Distances &potential);
 
@@ -64,4 +59,10 @@ std::pair<int, int> grow_ball_heavy(const Graph &graph, Distance diameter, std::
 std::vector<Graph> padded_decomposition_heavy(const Graph &graph, Distance diameter, NodeID s);
 
 void padding_check(const Graph &graph, const std::vector<bool> &u, const std::vector<bool> &pad, Distance diameter, Orientation orientation);
+
+void put_cycle_in_file(const NodeID &n,  const NodeID &from, const std::vector<NodeID> &parents);
+
+void check_cycle_correctness(const Graph &graph);
+
+void symmetric_graph(const Graph &graph);
 #endif //NEGATIVEWEIGHTSHORTESTPATH_PAD_H
