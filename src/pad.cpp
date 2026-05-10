@@ -187,6 +187,23 @@ std::vector<Graph> padded_decomposition(Graph &graph, Distance diameter) {
     NodeID n = graph.numberOfNodes();
     EdgeID m = graph.numberOfEdges();
 
+    std::vector<NodeID> node_order(n);
+    std::iota(node_order.begin(), node_order.end(), 0);
+
+    // Sort nodes by degree (descending order - highest degree first)
+    // std::vector<EdgeID> degrees(n);
+    // for (NodeID i = 0; i < n; i++) {
+    //     degrees[i] = graph.getAllDegreeOf(i);
+    // }
+    // Build node_order: nodes sorted by degree descending (ties by node id)
+    // std::sort(node_order.begin(), node_order.end(), [&](NodeID a, NodeID b) {
+    //     if (degrees[a] != degrees[b])
+    //         return degrees[a] > degrees[b];
+    //     return a < b;
+    // });
+    // std::mt19937 rng(1);
+    // std::shuffle(node_order.begin(), node_order.end(), rng);
+
     std::vector<bool> u_plus(n, false);
     std::vector<bool> u_minus(n, false);
     std::vector<bool> pad_plus(n, false);
@@ -207,11 +224,12 @@ std::vector<Graph> padded_decomposition(Graph &graph, Distance diameter) {
     std::vector<EdgeID> volumes_plus(n + 1, 0);
     std::vector<EdgeID> volumes_minus(n + 1, 0);
 
-    NodeID s = 0;
-    while (vol_u_plus * 2 < m && vol_u_minus * 2 < m) {
+    for (NodeID s: node_order) {
+        if (!(vol_u_plus * 2 < m && vol_u_minus * 2 < m))
+            break;
+
         // Finding initial node
         if (u_plus[s] || u_minus[s]) {
-            s++;
             continue;
         }
 
@@ -567,15 +585,19 @@ std::optional<Distances> pad::runLazyDijkstra(const Graph &graph, const Distance
 
             if (dist > distance[from]) continue;
 
-            if (distance[from] + potential[from] < 0 && positive[from] > (config::pad_scaling_factor - 1) * diameter) {
-                if (stats.in_padding)
-                    MEASUREMENT::addInt(EXP::LAZY_IN_PADDING, rounds);
-                else
-                    MEASUREMENT::addInt(EXP::LAZY_IN_SMALL, rounds);
+            if (distance[from] + potential[from] < 0) {
+                Distance rest = -(distance[from] + potential[from]);
 
-                PRINT("    HEURISTIC WORKS");
-                PRINT("    ROUNDS = " << rounds);
-                return {};
+                if (positive[from] + rest * (config::pad_scaling_factor) > (config::pad_scaling_factor - 1) * diameter) {
+                    if (stats.in_padding)
+                        MEASUREMENT::addInt(EXP::LAZY_IN_PADDING, rounds);
+                    else
+                        MEASUREMENT::addInt(EXP::LAZY_IN_SMALL, rounds);
+
+                    PRINT("    HEURISTIC WORKS");
+                    PRINT("    ROUNDS = " << rounds);
+                    return {};
+                }
             }
 
             bellman_phase.emplace_back(from);
