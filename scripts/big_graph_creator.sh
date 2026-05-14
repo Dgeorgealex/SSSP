@@ -56,6 +56,6 @@ maxw=$(($k*6))
 ../build/CreateGraph load_graph ../data/graphs/big_aug_"$alg"_"$coef"e"$pow"_bare.txt -a $dag_frac $maxw > ../data/graphs/big_aug_"$alg"_"$coef"e"$pow"_sorted.txt
 
 # Run CreateGraph to permute the graph
-../build/CreateGraph load_graph ../data/graphs/big_aug_"$alg"_"$coef"e"$pow"_sorted.txt -p > ../data/graphs/big_aug_"$alg"_"$coef"e"$pow".base
+../build/CreateGraph load_graph ../data/graphs/big_aug_"$alg"_"$coef"e"$pow"_sorted.txt -p > ../data/graphs/big_aug_"$alg"_"$coef"e"$pow".txt
 
 echo "Script completed successfully"
