@@ -116,10 +116,10 @@ FullEdges augment_graph(NodeID n, const FullEdges& edges, double p, Distance w) 
 
     std::clog << "Augmenting edges" << std::endl;
 
-    auto progressBar = [](double progress, unsigned int barLength) {
-        int pos = barLength * progress;
-        std::clog << "\r[" << std::string(pos, '=') << std::string(barLength - pos, ' ') << "] " << static_cast<int>(progress * 100.0) << " %" << std::flush;
-    };
+    // auto progressBar = [](double progress, unsigned int barLength) {
+    //     int pos = barLength * progress;
+    //     std::clog << "\r[" << std::string(pos, '=') << std::string(barLength - pos, ' ') << "] " << static_cast<int>(progress * 100.0) << " %" << std::flush;
+    // };
 
     // std::clog << "Creating set of edges" << std::endl;
     // std::unordered_set<std::pair<NodeID, NodeID>, hashFunction> edges_set;
@@ -131,7 +131,7 @@ FullEdges augment_graph(NodeID n, const FullEdges& edges, double p, Distance w) 
     // }
     // std::clog << std::endl;
 
-    EdgeSet edges_set(n, edges, true);
+    EdgeSet edges_set(n, edges, false);
 
     // Deciding whether drawing the edges one by one or computing all the edges
     // first and then selecting a subset
@@ -157,10 +157,10 @@ FullEdges augment_graph(NodeID n, const FullEdges& edges, double p, Distance w) 
             // if (i != j && edges_set.count({i, j}) == 0) {
                 new_edges.emplace_back(i, j, w);
                 edges_set.insert({i, j});
-                progressBar(static_cast<double>(++new_edges_count) / max_new_edges, 50);
+                // progressBar(static_cast<double>(++new_edges_count) / max_new_edges, 50);
             }
         }
-        std::clog << std::endl;
+        // std::clog << std::endl;
         return new_edges;
     }
 
@@ -174,7 +174,7 @@ FullEdges augment_graph(NodeID n, const FullEdges& edges, double p, Distance w) 
             if (i != j && !edges_set.contains({i, j})) {
             // if (i != j and edges_set.count({i, j}) == 0) {
                 new_edges.push_back({i, j, w});
-                progressBar(static_cast<double>(++new_edges_count) / max_new_edges, 50);
+                // progressBar(static_cast<double>(++new_edges_count) / max_new_edges, 50);
             }
         }
     }
