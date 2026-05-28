@@ -8,6 +8,7 @@
 #include <sstream>
 #include <cmath>
 #include <fstream>
+#include <filesystem>
 #include <stdexcept>
 
 #include "algorithms.h"
@@ -322,11 +323,25 @@ int main(int argc, char* argv[]) {
 
     Graph graph =  readGraph(args[0]);
 
-    auto opt_d = computeSSSP(SSSPAlg::LazyD, graph, 0);
-    if (!opt_d.has_value())
-        exit(-1);
+    Distances source_distances;
+    const std::filesystem::path graph_path(args[0]);
+    const std::filesystem::path result0_path = graph_path.parent_path() / ("result0_" + graph_path.filename().string());
+    const std::string result0_filename = result0_path.string();
+    if (std::filesystem::exists(result0_path)) {
+        source_distances = readDistancesFromFile(result0_filename);
+        if (source_distances.size() != graph.numberOfNodes()) 
+            source_distances.clear();
+    }
 
-    graph.applyPotential(opt_d.value());
+    if (source_distances.empty()) {
+        std::cout << "Computing SSSP\n";
+        auto opt_d = computeSSSP(SSSPAlg::LazyD, graph, 0);
+        if (!opt_d.has_value())
+            exit(-1);
+        source_distances = std::move(opt_d.value());
+    }
+
+    graph.applyPotential(source_distances);
     auto count = longest_paths(graph);
 
     NodeID n = graph.numberOfNodes();
@@ -358,6 +373,11 @@ int main(int argc, char* argv[]) {
     }
 
     Graph graph_w_cycle(n, output_edges);
+
+    for(int i = 0; i < n; i++)
+        source_distances[i] = -source_distances[i];
+    
+    graph_w_cycle.applyPotential(source_distances);
 
     potential_transformation(graph_w_cycle);
     
