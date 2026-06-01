@@ -49,6 +49,9 @@ def load_all_experiments(drop_old = True):
         df = read_existing_exp_file(f"../data/experiments/{filename}")
         dfs.append(df)
 
+    if not dfs:
+        return pd.DataFrame()
+
     df_merged = pd.concat(dfs, ignore_index=True)
 
 
@@ -84,26 +87,26 @@ def load_all_experiments(drop_old = True):
 # distinguish between groups that have a different value of n or different value of m.
 
 def group_by_instance(df):
-  """
-  Groups a pandas dataframe based on filename substrings, presence of "aug", and unique values in columns n and m.
+    """
+    Groups a pandas dataframe based on filename substrings, presence of "aug", and unique values in columns n and m.
 
-  Args:
-      df (pandas.DataFrame): The dataframe to be grouped.
-      filename_substrings (list): List of substrings to consider from filenames (excluding overlaps).
+    Args:
+        df (pandas.DataFrame): The dataframe to be grouped.
+        filename_substrings (list): List of substrings to consider from filenames (excluding overlaps).
 
-  Returns:
-      pandas.GroupBy: Grouped dataframe object.
-  """
+    Returns:
+        pandas.GroupBy: Grouped dataframe object.
+    """
 
-  filename_substrings = ["bfct", "dfs", "gor", "rd1", "rd2", "djtest"]
-#   cols_list = list(df.columns)
-#   bcf_params = cols_list[cols_list.index('use_lazy') : cols_list.index('avg_time')]
+    filename_substrings = ["bfct", "dfs", "gor", "rd1", "rd2", "djtest"]
+    #   cols_list = list(df.columns)
+    #   bcf_params = cols_list[cols_list.index('use_lazy') : cols_list.index('avg_time')]
 
-  # Filter out filenames containing substrings within other substrings (e.g., "mbfct" shouldn't be grouped with "bfct").
-#   filtered_df = df[df.filename.str.cat(filename_substrings, sep='|', na_rep='').isin(filename_substrings)]
+    # Filter out filenames containing substrings within other substrings (e.g., "mbfct" shouldn't be grouped with "bfct").
+    #   filtered_df = df[df.filename.str.cat(filename_substrings, sep='|', na_rep='').isin(filename_substrings)]
 
-  # Create a custom lambda function to define the grouping logic
-  def group_by_func(row):
+    # Create a custom lambda function to define the grouping logic
+    def group_by_func(row):
         row = df.loc[row]
 
         substrings = sorted([substring for substring in filename_substrings if substring in row.filename], key=len, reverse=True)
@@ -113,18 +116,18 @@ def group_by_instance(df):
             substring = substrings[0]
 
         return (
-        # Group by filename substring (excluding overlaps)
-        substring,
-        # Group by presence of "aug" (boolean or converted to boolean)
-        'shift' if re.search(r'shift_[a-z]+_', row.exp_name) else 'aug' if 'aug' in row.filename else 'original',
-        # Group by unique values in columns n and m
-        # row['n'], row['m'],
-        # row.source,
-        # '' if row.alg_name != 'BCF' else '-'.join([str(row[param]) for param in bcf_params]),
+            # Group by filename substring (excluding overlaps)
+            substring,
+            # Group by presence of "aug" (boolean or converted to boolean)
+            'shift' if re.search(r'shift_[a-z]+_', row.exp_name) else 'aug' if 'aug' in row.filename else 'original',
+            # Group by unique values in columns n and m
+            # row['n'], row['m'],
+            # row.source,
+            # '' if row.alg_name != 'BCF' else '-'.join([str(row[param]) for param in bcf_params]),
         )
 
-  # Group the dataframe based on the custom function
-  return df.groupby(group_by_func)
+    # Group the dataframe based on the custom function
+    return df.groupby(group_by_func)
 #   return filtered_df.groupby(group_by_func)
 
 def group_by_alg(df):
@@ -137,16 +140,16 @@ def group_by_alg(df):
         return (
             row.alg_name,
             '' if row.alg_name != 'BCF' else '-'.join([str(row[param]) for param in bcf_params]),
-            )
+        )
 
     return df.groupby(group_by_func)
 
 
 def orth_weigh(x, y, x_weights=None, y_weights=None):
-    
+
     if x_weights is None:
         x_weights = np.ones(len(x))
-    
+
     if y_weights is None:
         y_weights = np.ones(len(y))
 
@@ -185,7 +188,7 @@ def linear_regression(x, y, y_err=None):
         # Weighted linear regression using np.polyfit
         w = 1 / (y_err ** 2)
         x1, const = np.polyfit(x, y, 1, w=w)
-        
+
         # Calculate errors
         n = len(x)
         wx = w * x
@@ -194,27 +197,27 @@ def linear_regression(x, y, y_err=None):
         mean_y = np.sum(wy) / np.sum(w)
         s_xx = np.sum(w * (x - mean_x)**2)
         s_yy = np.sum(w * (y - mean_y)**2)
-        
+
         y_pred = const + x1 * x
         residuals = y - y_pred
         chi_square = np.sum((residuals / y_err)**2)
         reduced_chi_square = chi_square / (n - 2)
-        
+
         x1_err = np.sqrt(reduced_chi_square / s_xx)
         const_err = x1_err * np.sqrt(np.sum(x**2) / n)
     else:
         # Non-weighted linear regression
         const, x1, r_value, p_value, std_err = stats.linregress(x, y)
-        
+
         # Calculate errors
         n = len(x)
         mean_x = np.mean(x)
         s_xx = np.sum((x - mean_x)**2)
-        
+
         y_pred = const + x1 * x
         residuals = y - y_pred
         residual_variance = np.sum(residuals**2) / (n - 2)
-        
+
         x1_err = np.sqrt(residual_variance / s_xx)
         const_err = x1_err * np.sqrt(np.sum(x**2) / n)
 
@@ -224,10 +227,10 @@ def linear_regression(x, y, y_err=None):
 #     # Sample data
 #     x = np.array(x)
 #     y = np.array(y)  # Adjusted y values with more variability
-    
+
 #     if y_err is None:
 #         y_err = np.ones(len(y))
-    
+
 #     weights = 1 / y_err ** 2
 
 #     # Calculate weights based on the inverse of the variance of the errors
@@ -252,13 +255,13 @@ def weighted_linear_regression(x, y, y_err=None):
     y = np.array(y)
     if y_err is not None:
         y_err = np.array(y_err)
-    
+
     # Define weights
     if y_err is None:
         weights = np.ones_like(y)
     else:
         weights = 1 / (y_err ** 2)
-    
+
     # Calculate the weighted averages
     w = weights
     W = np.sum(w)
@@ -275,7 +278,7 @@ def weighted_linear_regression(x, y, y_err=None):
     # Calculate errors in slope and intercept
     x1_err = np.sqrt(W / denominator)
     const_err = np.sqrt(wx2 / denominator)
-    
+
     return x1, const, x1_err, const_err
 
 # def stats_linreg(x, y, y_err=None):
@@ -346,64 +349,64 @@ def log_regression(x, y, x_error=None, y_error=None, model='linear', loglog=Fals
 def format_numbers(a, b):
     # Find the number of decimal places in b
     decimal_places = len(str(b).split('.')[1])
-    
+
     # Format a and b with the same number of decimal places
     a = format(a, '.{}f'.format(decimal_places))
     b = format(b, '.{}f'.format(decimal_places))
-    
+
     # Return the formatted strings
     return a, b
 
 def round_value_and_error(val, err, force_int=False):
-  """Rounds an error value and a corresponding value to appropriate 
-  significant digits and truncates them to the last digit of the error.
+    """Rounds an error value and a corresponding value to appropriate
+    significant digits and truncates them to the last digit of the error.
 
-  Args:
-    val: The value to be rounded.
-    err: The error value to be rounded.
+    Args:
+      val: The value to be rounded.
+      err: The error value to be rounded.
 
-  Returns:
-    A tuple containing the rounded and truncated value and error as strings.
-  """
+    Returns:
+      A tuple containing the rounded and truncated value and error as strings.
+    """
 
-  # Handle cases where err is zero to avoid division by zero errors
-  if err == 0:
-    return str(round(val, 0)), '0'
+    # Handle cases where err is zero to avoid division by zero errors
+    if err == 0:
+        return str(round(val, 0)), '0'
 
-  # Determine the position of the most significant digit in err
-  msd_pos = -int(math.floor(math.log10(abs(err))))
+    # Determine the position of the most significant digit in err
+    msd_pos = -int(math.floor(math.log10(abs(err))))
 
-  digit_pos = 0
-  while True:
-    # Adjust rounding position if the most significant digit is 1 or 2
-    this_digit = str(abs(err))[digit_pos]
-    if False and this_digit in ['1', '2']:
-        msd_pos += 1
-        break
-    elif this_digit in ['0', '.']:
-        digit_pos += 1
-    else:
-        break
+    digit_pos = 0
+    while True:
+        # Adjust rounding position if the most significant digit is 1 or 2
+        this_digit = str(abs(err))[digit_pos]
+        if False and this_digit in ['1', '2']:
+            msd_pos += 1
+            break
+        elif this_digit in ['0', '.']:
+            digit_pos += 1
+        else:
+            break
 
 
-  # Round err to the determined significant digit
-  rounded_err = round(err, msd_pos)
+    # Round err to the determined significant digit
+    rounded_err = round(err, msd_pos)
 
-  # Round val to the same decimal place as the rounded err
-  rounded_val = round(val, msd_pos)
+    # Round val to the same decimal place as the rounded err
+    rounded_val = round(val, msd_pos)
 
-  # Determine the number of decimal places in rounded_err for truncation
-  decimal_places = len(str(rounded_err).split('.')[1]) if '.' in str(rounded_err) else 0
+    # Determine the number of decimal places in rounded_err for truncation
+    decimal_places = len(str(rounded_err).split('.')[1]) if '.' in str(rounded_err) else 0
 
-  # Truncate both rounded_val and rounded_err to the determined decimal places
-  truncated_val = round(rounded_val, decimal_places)
-  truncated_err = round(rounded_err, decimal_places)
+    # Truncate both rounded_val and rounded_err to the determined decimal places
+    truncated_val = round(rounded_val, decimal_places)
+    truncated_err = round(rounded_err, decimal_places)
 
-#   if truncated_err > 2.9:
-  if truncated_err > 0.9 or (force_int and truncated_err > 0.4):
-    return str(int(round(truncated_val))), str(int(round(truncated_err)))
+    #   if truncated_err > 2.9:
+    if truncated_err > 0.9 or (force_int and truncated_err > 0.4):
+        return str(int(round(truncated_val))), str(int(round(truncated_err)))
 
-  return format_numbers(truncated_val, truncated_err)
+    return format_numbers(truncated_val, truncated_err)
 
 def produce_plot(algs_data, name, filename=None, deactivate_plots=None):
 
@@ -420,7 +423,7 @@ def produce_plot(algs_data, name, filename=None, deactivate_plots=None):
         # Set the background color to white
         ax.set_facecolor('white')
 
-    df = pd.DataFrame(columns=['intercept', 'err_intercept_+', 'err_intercept_-', 'slope', 'err_slope'])
+    df_rows = []
 
     # Iterate over each set of points and interpolations
     for i, (alg_name, alg_elems) in enumerate(algs_data.items()):
@@ -434,13 +437,22 @@ def produce_plot(algs_data, name, filename=None, deactivate_plots=None):
             x.append(elem['edges'])
             y.append(elem['avgtime'])
             y_err.append(elem['std'])
-        
-        # print(x, y)
 
-        if any(elem == 0 for elem in y_err):
-            log10_intercept, slope, log10_intercept_err, slope_err = log_regression(x, y)
+        if len(x) == 0:
+            continue
+
+        if len(x) == 1:
+            log10_intercept = np.log10(y[0])
+            slope = 0.0
+            log10_intercept_err = 0.0
+            slope_err = 0.0
         else:
-            log10_intercept, slope, log10_intercept_err, slope_err = log_regression(x, y, y_error=y_err)
+            if any(elem == 0 for elem in y_err):
+                log10_intercept, slope, log10_intercept_err, slope_err = log_regression(x, y)
+            else:
+                log10_intercept, slope, log10_intercept_err, slope_err = log_regression(x, y, y_error=y_err)
+
+        # print(x, y)
 
         intercept = 10 ** log10_intercept
 
@@ -450,29 +462,34 @@ def produce_plot(algs_data, name, filename=None, deactivate_plots=None):
 
         slope_round, slope_err_round = round_value_and_error(slope, slope_err)
 
-        df = df.append({
+        df_rows.append({
             'alg_name': alg_name,
             'intercept': intercept,
             'err_intercept_+': max_intercept - intercept,
             'err_intercept_-': intercept - min_intercept,
             'slope': slope_round,
             'err_slope': slope_err_round,
-        }, ignore_index=True)
+        })
 
         if not deactivate_plots:
             # Plot the points
             # ax.scatter(x, y, label='_nolegend_', color=color)
             ax.errorbar(x, y, yerr=y_err, label='_nolegend_', fmt='o', color=color, linestyle='', markersize=2)
-        
+
         x_range = np.linspace(min(x), max(x), 100)
         y_range = intercept * x_range ** slope
-        
+
         # Plot the interpolation line
         # regression = f'{alg_name} (({intercept:.2g} ± {intercept_err:.2g}) * x^({slope_round} ± {slope_err_round}))'
-        regression = f'{alg_name} ({intercept:.2e} $m^{{ {slope_round} \pm {slope_err_round} }}$)'
+        regression = f'{alg_name} ({intercept:.2e} $m^{{ {slope_round} \\pm {slope_err_round} }}$)'
         if not deactivate_plots:
             ax.plot(x_range, y_range, label=regression, color=color)
-            
+
+    if df_rows:
+        df = pd.DataFrame(df_rows, columns=['alg_name', 'intercept', 'err_intercept_+', 'err_intercept_-', 'slope', 'err_slope'])
+    else:
+        df = pd.DataFrame(columns=['alg_name', 'intercept', 'err_intercept_+', 'err_intercept_-', 'slope', 'err_slope'])
+
 
     if not deactivate_plots:
         # Set the x-axis and y-axis to log scale
@@ -495,7 +512,10 @@ def produce_plot(algs_data, name, filename=None, deactivate_plots=None):
         })
 
         # Save the plot as a PDF file
-        plt.savefig(f'../data/plots/{name if filename is None else filename}.pdf', transparent=False, bbox_extra_artists=(legend,), bbox_inches='tight')
+        plots_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'data', 'plots'))
+        os.makedirs(plots_dir, exist_ok=True)
+        output_name = f'{name if filename is None else filename}.pdf'
+        plt.savefig(os.path.join(plots_dir, output_name), transparent=False, bbox_extra_artists=(legend,), bbox_inches='tight')
         # plt.show()
 
     return df
@@ -532,7 +552,7 @@ def get_plottable_points_grouped(df, m_tolerance=0.0):
         # Find other rows with 'm' value close to the current row
         m = row['m']
         df_m = df[np.abs(df['m'] - m) / m <= m_tolerance]
-        
+
         # Mark the indices in this grouping as considered
         considered_indices.update(df_m.index)
 
@@ -565,33 +585,33 @@ def get_plottable_points_grouped(df, m_tolerance=0.0):
                 'edges': int(first_row['m'])
             }
             plottable_points.append(iter_info)
-    
+
     return plottable_points
 
 def transform_dataframe(df):
     # Drop columns that contain 'err'
     df = df.loc[:, ~df.columns.str.contains('err')]
-    
+
     # Initialize an empty dictionary to hold the new columns and values
     new_data = {}
-    
+
     # Iterate over each row in the dataframe
     for _, row in df.iterrows():
         # Get the algorithm name
         alg_name = row['alg_name']
-        
+
         # Iterate over each column in the row
         for col in df.columns:
             if col != 'alg_name':
                 # Create the new column name
                 new_col_name = f"{alg_name}_{col}"
-                
+
                 # Add the value to the new data dictionary
                 new_data[new_col_name] = row[col]
-    
+
     # Convert the dictionary to a single-row dataframe
     new_df = pd.DataFrame(new_data, index=[0])
-    
+
     return new_df
 
 def main(deactivate_plots=False):
@@ -616,7 +636,7 @@ def main(deactivate_plots=False):
                 algs_data[alg_name] = get_plottable_points(group_algs_data)
 
             produce_plot(algs_data, '_'.join(str(elem) for elem in group_instance))
-        
+
         # Get the rows where:
         # - filename matches the regex 'shift3_'
         # - 'exp_name' starts with 'shift_bcf'
@@ -638,8 +658,8 @@ def main(deactivate_plots=False):
         df0 = df0[df0['cutedgesseed'] == 111]
 
         algs_data = {'BCF-Shift-New-3': get_plottable_points(df3),
-                    'BCF-Shift-New-4': get_plottable_points(df4),
-                    'BCF-Shift-Old': get_plottable_points(df0)}
+                     'BCF-Shift-New-4': get_plottable_points(df4),
+                     'BCF-Shift-Old': get_plottable_points(df0)}
 
         produce_plot(algs_data, 'new_shift_vs_old')
 
@@ -689,7 +709,7 @@ def main(deactivate_plots=False):
         'log3': get_plottable_points_grouped(df_log3)
     }
 
-    produce_plot(algs_data, '$m \log m$ vs $m \log^2 m$ vs $m \log^3 m$', 'log1_vs_log2')
+    produce_plot(algs_data, '$m \\log m$ vs $m \\log^2 m$ vs $m \\log^3 m$', 'log1_vs_log2')
 
     # Shift BCF VS GOR
 
@@ -724,9 +744,9 @@ def main(deactivate_plots=False):
             iter_info['nodes'] = int(row['n'])
             iter_info['edges'] = int(row['m'])
             plottable_points.append(iter_info)
-        
+
         plottable_points_alg[alg_name] = plottable_points
-    
+
     algs_data = {'BCF': plottable_points_alg['BCF'],
                  'GOR': plottable_points_alg['GOR']}
 
@@ -740,7 +760,7 @@ def main(deactivate_plots=False):
     df_ssh = drop_old_experiments(df_ssh)
 
     for alg_name in ['BCF', 'GOR']:
-        
+
         df_ssh_alg = df_ssh[df_ssh['alg_name'] == alg_name]
         plottable_points = get_plottable_points_grouped(df_ssh_alg, m_tolerance=0.05)
 
@@ -758,7 +778,7 @@ def main(deactivate_plots=False):
             df[col] = df[col].apply(
                 lambda x: '$\\mathbf{' + x[1:-1] + '}$' if str(x) == str(min_str) else x
             )
-    
+
         return df
 
 
@@ -792,7 +812,7 @@ def main(deactivate_plots=False):
                 continue
 
             plottable_points[k_factor] = get_plottable_points(df_kf_kf)
-        
+
         if len(plottable_points) == 0:
             continue
 
@@ -810,18 +830,18 @@ def main(deactivate_plots=False):
             if len(df_kf_2e7) == 0:
                 print('ERROR: 2e7 not found')
                 quit()
-            
+
             kf_value = df_kf_2e7[df_kf_2e7['k_factor'] == k_factor]['avg_time'].values[0]
             kf_value = str(int(kf_value))
             df_kf_last_row['$K = ' + str(k_factor) + '$'] = kf_value
 
         df_kf_last.append(df_kf_last_row)
 
-    df_kf_res = pd.concat(df_kf_res)
+    df_kf_res = pd.concat(df_kf_res) if df_kf_res else pd.DataFrame()
 
-    
+
     # print(df_kf_res.to_latex(index=False))
-    df_kf_last = pd.concat(df_kf_last)
+    df_kf_last = pd.concat(df_kf_last) if df_kf_last else pd.DataFrame()
 
     # df_kf_last = highlight_minmax_row(df_kf_last, minmax=min)
 
@@ -901,7 +921,7 @@ def main(deactivate_plots=False):
         df_kf2e7_res.append(df_kf2e7_last_row)
 
 
-    df_kf2e7_res = pd.concat(df_kf2e7_res)
+    df_kf2e7_res = pd.concat(df_kf2e7_res) if df_kf2e7_res else pd.DataFrame()
 
 
     def highlight_min_value(df):
@@ -915,17 +935,17 @@ def main(deactivate_plots=False):
             # Skip the first column
             values = row.iloc[1:].apply(extract_value)
             min_idx = values.idxmin()
-            
+
             # Create a new row with the highlighted minimum
             new_row = row.copy()
             min_value = new_row[min_idx]
             new_row[min_idx] = f"\\mathbf{{{min_value}}}"
-            
+
             return new_row
 
         # Apply the highlighting to each row
         return df.apply(highlight_row, axis=1)
-    
+
     def highlight_min_values(df):
         def extract_value(s):
             try:
@@ -937,13 +957,13 @@ def main(deactivate_plots=False):
             # Skip the first column
             values = row.iloc[1:].apply(extract_value)
             min_value = values.min()
-            
+
             # Create a new row with the highlighted minimums
             new_row = row.copy()
             for idx, value in values.items():
                 if value == min_value:
                     new_row[idx] = f"\\mathbf{{{row[idx]}}}"
-            
+
             return new_row
 
         # Apply the highlighting to each row
@@ -1012,9 +1032,9 @@ def main(deactivate_plots=False):
                 iter_info['nodes'] = int(row['n'])
                 iter_info['edges'] = int(row['m'])
                 plottable_points.append(iter_info)
-            
+
             plottable_points_alg[alg_name] = plottable_points
-        
+
         algs_data = {f'BCF': plottable_points_alg['bcf'], f'GOR': plottable_points_alg['gor']}
 
         plot_title = f'AUG {instance.upper()} instances' if instance != 'rand' else f'RANDOM RESTRICTED instances'
@@ -1093,7 +1113,7 @@ def main(deactivate_plots=False):
 
             # plottable_points[diam_apprx] = get_plottable_points(df_da_da)
             plottable_points[diam_apprx] = get_plottable_points_grouped(df_da_da)
-        
+
         if len(plottable_points) == 0:
             continue
 
@@ -1103,7 +1123,7 @@ def main(deactivate_plots=False):
 
         produce_plot(algs_data, f'Parameter: diam_apprx. {instance_type}', filename=f'diam_apprx_{instance}')
 
-    
+
     # rand_label
 
     df_rl = df_wold[df_wold['exp_name'].str.startswith('randl')]
@@ -1128,7 +1148,7 @@ def main(deactivate_plots=False):
                 continue
 
             plottable_points[rand_label] = get_plottable_points(df_rl_rl)
-        
+
         if len(plottable_points) == 0:
             continue
 
@@ -1163,7 +1183,7 @@ def main(deactivate_plots=False):
 
             # plottable_points[use_lazy] = get_plottable_points(df_ul_ul)
             plottable_points[use_lazy] = get_plottable_points_grouped(df_ul_ul, m_tolerance=0.01)
-        
+
         if len(plottable_points) == 0:
             continue
 
@@ -1198,15 +1218,15 @@ def main(deactivate_plots=False):
             avg_time = df_alg[df_alg['exp_name'] == f'usa_{alg_name.lower()}_{exp_name}']['avg_time'].values[0]
             std = df_alg[df_alg['exp_name'] == f'usa_{alg_name.lower()}_{exp_name}']['std'].values[0]
             avg_time, std = round_value_and_error(avg_time, std)
-            df_usa_row['\\usa{' + str(exp_name) + '}'] = f'${avg_time} \pm {std}$'
+            df_usa_row['\\usa{' + str(exp_name) + '}'] = f'${avg_time} \\pm {std}$'
 
         df_usa_rows.append(df_usa_row)
 
-    df_usa_last = pd.concat(df_usa_rows)
+    df_usa_last = pd.concat(df_usa_rows) if df_usa_rows else pd.DataFrame()
 
 
     df_usa_last = highlight_minmax_col(df_usa_last, minmax=min)
-    
+
     # def format_error_string(string):
     #     """
     #     Extracts integer values from a string, formats them in scientific notation,
