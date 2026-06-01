@@ -755,7 +755,7 @@ std::optional<Distances> gor(Graph &G, std::variant<NodeID, const Distances *> s
 }
 
 
-std::optional<Distances> gor_with_cycles(Graph &G, std::variant<NodeID, const Distances *> source_pot) {
+std::variant<Distances, std::vector<NodeID>> gor_with_cycles(Graph &G, std::variant<NodeID, const Distances *> source_pot) {
     NodeID n = G.numberOfNodes();
     NodeID num_scans = 0;
     std::vector<NodeID> cnt(n, 0); // Still use this as a failsafe
@@ -904,11 +904,11 @@ std::optional<Distances> gor_with_cycles(Graph &G, std::variant<NodeID, const Di
                         bool negative = (pot_edge_w + dist[u] < dist[v]);
 
                         if (scc[u] == scc[v] && negative)
-                            return {};
+                            return std::vector<NodeID>{};
 
                         if (scc[u] == 0) {
                             if (negative)
-                                return {};
+                                return std::vector<NodeID>{};
 
                             Current_T[v] = ++arc;
                             dfs.push_back(v);
@@ -949,7 +949,7 @@ std::optional<Distances> gor_with_cycles(Graph &G, std::variant<NodeID, const Di
                         cnt[j]++;
                         if (cnt[j] > n) {
                             // brutal way to detect negative cycle
-                            return {};
+                            return std::vector<NodeID>{};
                         }
                     }
                 }
@@ -962,15 +962,21 @@ std::optional<Distances> gor_with_cycles(Graph &G, std::variant<NodeID, const Di
 
 
 std::optional<Distances> gor(Graph &G, NodeID source) {
-    if (config::cycle_detection)
-        return gor_with_cycles(G, std::variant<NodeID, const Distances *>(source));
-
+    if (config::cycle_detection) {
+        auto result = gor_with_cycles(G, std::variant<NodeID, const Distances *>(source));
+        if (std::holds_alternative<Distances>(result))
+            return std::get<Distances>(result);
+        return {};
+    }
     return gor(G, std::variant<NodeID, const Distances *>(source));
 }
 
 std::optional<Distances> gor(Graph &G, const Distances &potential) {
-    if (config::cycle_detection)
-        return gor_with_cycles(G, std::variant<NodeID, const Distances *>(&potential));
-
+    if (config::cycle_detection) {
+        auto result = gor_with_cycles(G, std::variant<NodeID, const Distances *>(&potential));
+        if (std::holds_alternative<Distances>(result))
+            return std::get<Distances>(result);
+        return {};
+    }
     return gor(G, std::variant<NodeID, const Distances *>(&potential));
 }

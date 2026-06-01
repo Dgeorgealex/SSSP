@@ -16,11 +16,9 @@
 namespace pad {
     using GraphHeap = AddressableKHeap<4, NodeID, Distance>;
 
-    std::optional<Distances> runMainAlg(Graph &graph, Distance diameter, int level = 0);
+    std::variant<Distances, std::vector<NodeID>> runMainAlg(Graph &graph, Distance diameter, int level = 0);
 
-    bool fast_admissible_graph_check(const Graph &graph, const Distances &potential);
-
-    std::optional<Distances> runLazyDijkstra(const Graph& graph, const Distances& potential, Distance diameter, int max_rounds);
+    std::variant<Distances, std::vector<NodeID>> runLazyDijkstra(const Graph& graph, const Distances& potential, Distance diameter, int max_rounds);
 
     std::optional<Distances> scaling_early_finish(const Graph &graph, const Graph &current_graph, NodeID source);
 
@@ -65,4 +63,10 @@ void put_cycle_in_file(const NodeID &n,  const NodeID &from, const std::vector<N
 void check_cycle_correctness(const Graph &graph);
 
 void symmetric_graph(const Graph &graph);
+
+std::vector<NodeID> extract_cycle_max_rounds(const std::vector<NodeID> &cnt, const std::vector<NodeID> &parents);
+
+std::vector<NodeID> extract_cycle_heuristic(NodeID from, const std::vector<NodeID> &parents);
+
+std::vector<NodeID> change_cycle_ids();
 #endif //NEGATIVEWEIGHTSHORTESTPATH_PAD_H

@@ -414,7 +414,7 @@ std::vector<Graph> padded_decomposition(Graph &graph, Distance diameter) {
     return X;
 }
 
-std::optional<Distances> pad::runMainAlg(Graph &graph, Distance diameter, int level) {
+std::variant<Distances, std::vector<NodeID>> pad::runMainAlg(Graph &graph, Distance diameter, int level) {
     const NodeID n = graph.numberOfNodes();
     const EdgeID m = graph.numberOfEdges();
 
@@ -465,12 +465,12 @@ std::optional<Distances> pad::runMainAlg(Graph &graph, Distance diameter, int le
 
         PRINT("RECURSING ON - " << components.size() << " PROBLEMS");
         for (auto &component: components) {
-            auto opt_comp_potential = runMainAlg(component, cDiameter, level + 1);
+            auto opt_comp_result = runMainAlg(component, cDiameter, level + 1);
 
-            if (!opt_comp_potential.has_value())
-                return {};
+            if (std::holds_alternative<std::vector<NodeID>>(opt_comp_result))
+                return change_cycle_ids();
 
-            auto component_potential = std::move(opt_comp_potential.value());
+            auto component_potential = std::move(std::get<Distances>(opt_comp_result));
 
             for (NodeID j = 0; j < component.numberOfNodes(); j++)
                 potential[component.global_id[j]] = component_potential[j];
@@ -524,7 +524,11 @@ std::optional<Distances> pad::runMainAlg(Graph &graph, Distance diameter, int le
     if (config::pad_use_lazy) {
         // A max number of rounds OR stopping condition from scaling
         stats.in_padding = true;
-        optional_H_potential = runLazyDijkstra(H, phi, diameter, -1);
+        auto H_result = runLazyDijkstra(H, phi, diameter, -1);
+        if (std::holds_alternative<std::vector<NodeID>>(H_result))
+            return change_cycle_ids();
+
+        optional_H_potential = std::move(std::get<Distances>(H_result));
     } else
         optional_H_potential = gor(H, phi);
 
@@ -551,11 +555,13 @@ std::optional<Distances> pad::runMainAlg(Graph &graph, Distance diameter, int le
 
 
 
-std::optional<Distances> pad::runLazyDijkstra(const Graph &graph, const Distances &potential, Distance diameter,
+std::variant<Distances, std::vector<NodeID>> pad::runLazyDijkstra(const Graph &graph, const Distances &potential, Distance diameter,
                                               int max_rounds) {
     NodeID n = graph.numberOfNodes();
     Distances distance(n, c::infty);
     Distances positive(n, 0);
+    std::vector<NodeID> parents(n, -1);
+    std::vector<NodeID> cnt(n, 0);
     std::vector<NodeID> bellman_phase;
     GraphHeap q(n);
     int rounds = 0;
@@ -573,7 +579,7 @@ std::optional<Distances> pad::runLazyDijkstra(const Graph &graph, const Distance
         // PRINT("ROUNDS: " << rounds);
         if (rounds == max_rounds) {
             PRINT("MAX ROUNDS REACHED: " << max_rounds);
-            return {};
+            return extract_cycle_max_rounds(cnt, parents);
         }
 
         // run Dijkstra phase
@@ -596,11 +602,12 @@ std::optional<Distances> pad::runLazyDijkstra(const Graph &graph, const Distance
 
                     PRINT("    HEURISTIC WORKS");
                     PRINT("    ROUNDS = " << rounds);
-                    return {};
+                    return extract_cycle_heuristic(from, parents);
                 }
             }
 
             bellman_phase.emplace_back(from);
+            cnt[from]++;
 
             for (auto const &edge: graph.getEdgesOf(from)) {
                 Distance weight = edge.weight + potential[from] - potential[edge.target];
@@ -734,131 +741,6 @@ std::optional<Distances> pad::scaling_early_finish(const Graph &graph, const Gra
     return {};
 }
 
-bool pad::fast_admissible_graph_check(const Graph &graph, const Distances &potential) {
-    NodeID n = graph.numberOfNodes();
-
-    int scc_count = 0;
-    std::vector<int> scc(n, 0); // use as visitation vector (scc[i] = 0) means node visited
-    std::vector<bool> admissible(n, false);
-
-    std::vector<EdgeRange::iterator> Current(n), Current_T(n);
-    std::vector<EdgeRange> edgesOf(n), edgesOf_T(n);
-
-    for (NodeID i = 0; i < n; i++) {
-        edgesOf[i] = graph.getEdgesOf(i, Orientation::OUT);
-        edgesOf_T[i] = graph.getEdgesOf(i, Orientation::IN);
-
-        Current[i] = edgesOf[i].begin();
-        Current_T[i] = edgesOf_T[i].begin();
-    }
-
-    std::vector<int> topo_sort, dfs;
-    dfs.reserve(n);
-    topo_sort.reserve(n);
-
-    for (NodeID i = 0; i < n; i++) {
-        for (auto &edge: graph.getEdgesOf(i))
-            if (potential[i] + edge.weight <= potential[edge.target]) {
-                admissible[i] = true;
-                break;
-            }
-    }
-
-    for (NodeID i = 0; i < n; i++)
-        if (admissible[i] && scc[i] == 0) {
-            // not yet visited...
-            dfs.push_back(i);
-
-            while (dfs.size() != 0) {
-                NodeID v = dfs.back();
-                dfs.pop_back();
-
-                bool found = false;
-                for (auto arc = Current[v]; arc != edgesOf[v].end() && !found; ++arc) {
-                    NodeID u = arc->target;
-
-                    if (!admissible[u] || scc[u] != 0) // Not admissible or visited
-                        continue;
-
-                    // if admissible edge
-                    if (potential[v] + arc->weight <= potential[u]) {
-                        Current[v] = arc;
-                        ++Current[v];
-
-                        dfs.push_back(v);
-
-                        scc[u] = 1;
-                        dfs.push_back(u);
-
-                        found = true;
-                    }
-                }
-
-                if (!found) {
-                    // t_out
-                    topo_sort.push_back(v);
-                }
-            }
-        }
-
-    // reset scc vector
-    for (auto it: topo_sort)
-        scc[it] = 0;
-
-    for (auto it: std::views::reverse(topo_sort)) {
-        if (scc[it] != 0)
-            continue;
-
-        scc_count++;
-        scc[it] = scc_count;
-        dfs.push_back(it);
-
-        while (dfs.size() != 0) {
-            NodeID v = dfs.back();
-            dfs.pop_back();
-
-            for (auto arc = Current_T[v]; arc != edgesOf_T[v].end(); ++arc) {
-                NodeID u = arc->target;
-
-                if (!admissible[u])
-                    continue;
-
-                if (potential[u] + arc->weight <= potential[v]) {
-                    bool negative = (potential[u] + arc->weight <= potential[v]);
-
-                    if (scc[u] == scc[v] && negative)
-                        return true;
-
-                    if (scc[u] == 0) {
-                        if (negative)
-                            return true;
-
-                        Current_T[v] = ++arc;
-                        dfs.push_back(v);
-
-                        scc[u] = scc_count;
-                        dfs.push_back(u);
-
-                        break;
-                    }
-                }
-            }
-        }
-    }
-
-    std::vector<NodeID> scc_size(scc_count, 0);
-    NodeID maxx = 0;
-    for (int i = 0; i < n; i++)
-        if (scc[i])
-            scc_size[scc[i] - 1]++;
-
-    for (int i = 0; i < scc_count; i++)
-        maxx = std::max(maxx, scc_size[i]);
-
-    MEASUREMENT::addInt(EXP::SCC_ADMISSIBLE_GRAPH, maxx);
-    return false;
-}
-
 // pad
 
 void padding_check(const Graph &graph, const std::vector<bool> &u, const std::vector<bool> &pad, Distance diameter, Orientation orientation) {
@@ -941,6 +823,17 @@ void symmetric_graph(const Graph &graph) {
     }
 }
 
+std::vector<NodeID> extract_cycle_max_rounds(const std::vector<NodeID> &cnt, const std::vector<NodeID> &parents) {
+    return {};
+}
+
+std::vector<NodeID> extract_cycle_heuristic(NodeID from, const std::vector<NodeID> &parents) {
+    return {};
+}
+
+std::vector<NodeID> change_cycle_ids() {
+    return {};
+}
 /*
 void put_cycle_in_file(const NodeID &n, const NodeID &from, const std::vector<NodeID> &parents) {
     std::vector<bool> seen(n, false);

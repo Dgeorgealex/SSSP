@@ -258,12 +258,12 @@ std::optional<Distances> PAD(Graph &graph, NodeID source) {
     for (auto &component: components) {
         // ADD here the (n * m) upper bound on the diameter
         // NodeID n = component.numberOfNodes(); EdgeID m = component.numberOfEdges();
-        auto opt_component_potential = pad::runMainAlg(component, c::infty);
+        auto opt_component_result = pad::runMainAlg(component, c::infty);
 
-        if (!opt_component_potential.has_value())  // Found a cycle
+        if (std::holds_alternative<std::vector<NodeID>>(opt_component_result))  // Found a cycle
             return {};
 
-        auto component_potential = std::move(opt_component_potential.value());
+        auto component_potential = std::move(std::get<Distances>(opt_component_result));
 
         for (NodeID i = 0; i < component.numberOfNodes(); i++)
             potential[component.global_id[i]] = component_potential[i];
@@ -274,7 +274,7 @@ std::optional<Distances> PAD(Graph &graph, NodeID source) {
     return FinalDijkstraFP(graph, potential, source);
 }
 
-std::optional<Distances> PADSCALING(Graph &graph, NodeID source) {
+std::variant<Distances, std::vector<NodeID>> PADSCALING(Graph &graph, NodeID source) {
     // reset statistcs:
     MEASUREMENT::reset(EXP::LAZY_IN_SMALL);
     MEASUREMENT::reset(EXP::LAZY_IN_PADDING);
@@ -324,10 +324,10 @@ std::optional<Distances> PADSCALING(Graph &graph, NodeID source) {
 
         auto components = decomposeIntoSCCs(working_graph);
         for (auto &component: components) {
-            auto opt_component_potential = pad::runMainAlg(component, c::infty);
-            if (!opt_component_potential.has_value())
-                return {};
-            auto component_potential = std::move(opt_component_potential.value());
+            auto opt_component_result = pad::runMainAlg(component, c::infty);
+            if (std::holds_alternative<std::vector<NodeID>>(opt_component_result))
+                return std::vector<NodeID>{};
+            auto component_potential = std::move(std::get<Distances>(opt_component_result));
             for (NodeID i = 0; i < component.numberOfNodes(); i++)
                 potential[component.global_id[i]] = component_potential[i];
         }
@@ -484,8 +484,12 @@ std::optional<Distances> computeSSSP(
             return bcf::runLazyDijkstra(graph, source);
         case SSSPAlg::PAD:
             return PAD(graph, source);
-        case SSSPAlg::PADSCALING:
-            return PADSCALING(graph, source);
+        case SSSPAlg::PADSCALING: {
+            auto result =  PADSCALING(graph, source);
+            if (std::holds_alternative<Distances>(result))
+                return std::get<Distances>(result);
+            return {};
+        }
         default:
             ERROR("Unknown algorithm.");
     };
@@ -502,7 +506,7 @@ bool negCycleDetection(NegCycleAlg algorithm, Graph& graph) {
         case NegCycleAlg::BFCT: // FIXME: this does only report negative cycles reachable from node 0
             return !BFCT(graph, 0).has_value();
         case NegCycleAlg::PADSCALING:
-            return !PADSCALING(graph, 0).has_value();
+            return std::holds_alternative<Distances>(PADSCALING(graph, 0));
         default:
             ERROR("Unknown algorithm.");
     };
