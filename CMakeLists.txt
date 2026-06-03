@@ -47,6 +47,7 @@ add_library(Library
 	src/pad.h
 	src/pad.cpp
 	src/cycle_add.cpp
+	src/cycle_cancelling.cpp
 )
 
 add_executable(Main src/main.cpp)
@@ -55,11 +56,14 @@ add_executable(RuntimeTests src/runtime_tests.cpp)
 add_executable(CreateGraph src/create_graph.cpp)
 add_executable(CycleAdd src/cycle_add.cpp)
 
+add_executable(CycleCancelling src/cycle_cancelling.cpp)
+
 target_link_libraries(Main PRIVATE Library)
 target_link_libraries(UnitTests PRIVATE Library)
 target_link_libraries(RuntimeTests PRIVATE Library)
 target_link_libraries(CreateGraph PRIVATE Library)
 target_link_libraries(CycleAdd PRIVATE Library)
+target_link_libraries(CycleCancelling PRIVATE Library)
 
 enable_testing()
 add_test(NAME UnitTests COMMAND UnitTests)

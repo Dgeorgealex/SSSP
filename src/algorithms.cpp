@@ -326,7 +326,7 @@ std::variant<Distances, std::vector<NodeID>> PADSCALING(Graph &graph, NodeID sou
         for (auto &component: components) {
             auto opt_component_result = pad::runMainAlg(component, c::infty);
             if (std::holds_alternative<std::vector<NodeID>>(opt_component_result))
-                return std::vector<NodeID>{};
+                return close_cycle(graph, change_cycle_ids(component, std::get<std::vector<NodeID>>(opt_component_result)));
             auto component_potential = std::move(std::get<Distances>(opt_component_result));
             for (NodeID i = 0; i < component.numberOfNodes(); i++)
                 potential[component.global_id[i]] = component_potential[i];
@@ -585,4 +585,11 @@ bool isResultCorrect(Graph const& graph, Distances const& distances, NodeID sour
         }
     }
     return true;
+}
+
+std::vector<NodeID> close_cycle(const Graph &graph, const std::vector<NodeID> &cycle) {
+    // if (cycle.size() >= 2 && cycle.front() == cycle.back()) {
+    //     return {cycle.begin(), cycle.end() - 1};
+    // }
+    return {};
 }

@@ -64,9 +64,7 @@ void check_cycle_correctness(const Graph &graph);
 
 void symmetric_graph(const Graph &graph);
 
-std::vector<NodeID> extract_cycle_max_rounds(const std::vector<NodeID> &cnt, const std::vector<NodeID> &parents);
+std::vector<NodeID> extract_cycle(NodeID from, const std::vector<int> &parent);
 
-std::vector<NodeID> extract_cycle_heuristic(NodeID from, const std::vector<NodeID> &parents);
-
-std::vector<NodeID> change_cycle_ids();
+std::vector<NodeID> change_cycle_ids(const Graph &g, const std::vector<NodeID> &cycle);
 #endif //NEGATIVEWEIGHTSHORTESTPATH_PAD_H

@@ -48,3 +48,7 @@ std::optional<Distances> computeSSSP(
 bool negCycleDetection(NegCycleAlg algorithm, Graph& graph);
 
 bool isResultCorrect(Graph const& graph, Distances const& distances, NodeID source);
+
+std::variant<Distances, std::vector<NodeID>> PADSCALING(Graph &graph, NodeID source);
+
+std::vector<NodeID> close_cycle(const Graph &graph, const std::vector<NodeID> &cycle);

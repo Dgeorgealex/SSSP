@@ -7,6 +7,7 @@
 #include <cassert>
 #include <optional>
 #include <variant>
+#include <algorithm>
 // #include "types_gor.h"
 #include "graph.h"
 // #include "parser_dh.h"
@@ -42,3 +43,4 @@ std::optional<Distances> GOR(Graph& graph, NodeID source, const Distances& poten
 
 std::optional<Distances> gor(Graph &G, NodeID source);
 std::optional<Distances> gor(Graph &G, const Distances& potential);
+std::variant<Distances, std::vector<NodeID>> gor_with_cycles(Graph &G, std::variant<NodeID, const Distances *> source_pot);

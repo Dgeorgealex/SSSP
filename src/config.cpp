@@ -71,7 +71,7 @@ namespace config {
 
     int pad_small = 500;
     int pad_rounds = 1000;       // Number of LazyDijkstra rounds -> used for restricted graph detection :: BUG with 600 rd1 c2
-    int pad_scaling_factor = 8;
+    int pad_scaling_factor = 2;
     long long pad_alpha = 3;    // Padding ratio
     int pad_use_lazy = 1;   // 0 -> use GOR, 1 -> use LazyDijkstra
 

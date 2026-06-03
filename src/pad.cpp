@@ -4,6 +4,8 @@
 
 #include "pad.h"
 
+#include <set>
+
 #include "measurement_tool.h"
 
 Graph get_new_graph(const Graph &graph, const std::vector<bool> &u) {
@@ -467,9 +469,10 @@ std::variant<Distances, std::vector<NodeID>> pad::runMainAlg(Graph &graph, Dista
         for (auto &component: components) {
             auto opt_comp_result = runMainAlg(component, cDiameter, level + 1);
 
-            if (std::holds_alternative<std::vector<NodeID>>(opt_comp_result))
-                return change_cycle_ids();
-
+            if (std::holds_alternative<std::vector<NodeID>>(opt_comp_result)) {
+                auto first_change = change_cycle_ids(component, std::get<std::vector<NodeID>>(opt_comp_result));
+                return change_cycle_ids(X[i], first_change);
+            }
             auto component_potential = std::move(std::get<Distances>(opt_comp_result));
 
             for (NodeID j = 0; j < component.numberOfNodes(); j++)
@@ -515,7 +518,7 @@ std::variant<Distances, std::vector<NodeID>> pad::runMainAlg(Graph &graph, Dista
     } else
         PRINT("NO PADDING");
 
-    auto H = Graph(H_n, e);
+    auto H = Graph(H_n, e, global_id);
     PRINT("DONE CREATING");
 
     PRINT("    RUNNING LAZY DIJKSTRA: H_n = " << H_n << ", e.size() = " << e.size() << ", n = " << n << ", m = " << m <<
@@ -526,7 +529,7 @@ std::variant<Distances, std::vector<NodeID>> pad::runMainAlg(Graph &graph, Dista
         stats.in_padding = true;
         auto H_result = runLazyDijkstra(H, phi, diameter, -1);
         if (std::holds_alternative<std::vector<NodeID>>(H_result))
-            return change_cycle_ids();
+            return change_cycle_ids(H, std::get<std::vector<NodeID>>(H_result));
 
         optional_H_potential = std::move(std::get<Distances>(H_result));
     } else
@@ -560,7 +563,7 @@ std::variant<Distances, std::vector<NodeID>> pad::runLazyDijkstra(const Graph &g
     NodeID n = graph.numberOfNodes();
     Distances distance(n, c::infty);
     Distances positive(n, 0);
-    std::vector<NodeID> parents(n, -1);
+    std::vector<int> parent(n, 0);
     std::vector<NodeID> cnt(n, 0);
     std::vector<NodeID> bellman_phase;
     GraphHeap q(n);
@@ -579,7 +582,11 @@ std::variant<Distances, std::vector<NodeID>> pad::runLazyDijkstra(const Graph &g
         // PRINT("ROUNDS: " << rounds);
         if (rounds == max_rounds) {
             PRINT("MAX ROUNDS REACHED: " << max_rounds);
-            return extract_cycle_max_rounds(cnt, parents);
+            NodeID from = 0;
+            for (int i = 0; i < n; i++)
+                if (cnt[i] == max_rounds)
+                    from = i;
+            return extract_cycle(from, parent);
         }
 
         // run Dijkstra phase
@@ -602,12 +609,11 @@ std::variant<Distances, std::vector<NodeID>> pad::runLazyDijkstra(const Graph &g
 
                     PRINT("    HEURISTIC WORKS");
                     PRINT("    ROUNDS = " << rounds);
-                    return extract_cycle_heuristic(from, parents);
+                    return extract_cycle(from, parent);
                 }
             }
 
             bellman_phase.emplace_back(from);
-            cnt[from]++;
 
             for (auto const &edge: graph.getEdgesOf(from)) {
                 Distance weight = edge.weight + potential[from] - potential[edge.target];
@@ -621,11 +627,15 @@ std::variant<Distances, std::vector<NodeID>> pad::runLazyDijkstra(const Graph &g
                     positive[edge.target] = positive[from] + std::max(static_cast<Distance>(0), edge.weight);
 
                     q.insert(edge.target, tentative_dist);
+
+                    parent[edge.target] = from;
                 } else if (tentative_dist == distance[edge.target]) {
                     Distance tentative_positive = positive[from] + std::max(static_cast<Distance>(0), edge.weight);
 
-                    if (tentative_positive > positive[edge.target])
+                    if (tentative_positive > positive[edge.target]) {
                         positive[edge.target] = tentative_positive;
+                        parent[edge.target] = from;
+                    }
                 }
             }
         }
@@ -644,11 +654,15 @@ std::variant<Distances, std::vector<NodeID>> pad::runLazyDijkstra(const Graph &g
                     positive[edge.target] = positive[from] + std::max(static_cast<Distance>(0), edge.weight);
 
                     q.insert(edge.target, tentative_dist);
+                    parent[edge.target] = from;
+                    cnt[edge.target] = rounds + 1;
                 } else if (tentative_dist == distance[edge.target]) {
                     Distance tentative_positive = positive[from] + std::max(static_cast<Distance>(0), edge.weight);
 
-                    if (tentative_positive > positive[edge.target])
+                    if (tentative_positive > positive[edge.target]) {
                         positive[edge.target] = tentative_positive;
+                        parent[edge.target] = from;
+                    }
                 }
             }
 
@@ -823,74 +837,39 @@ void symmetric_graph(const Graph &graph) {
     }
 }
 
-std::vector<NodeID> extract_cycle_max_rounds(const std::vector<NodeID> &cnt, const std::vector<NodeID> &parents) {
+std::vector<NodeID> extract_cycle(NodeID from, const std::vector<int> &parent) {
+    // int x = from;
+    // std::vector<NodeID>ans;
+    // int cnt = 0;
+    // while (x != -1) {
+    //     ans.push_back(x);
+    //     x = parent[x];
+    //     cnt++;
+    //     if (cnt > parent.size())
+    //         break;
+    // }
+    // if (x == -1) {
+    //     std::reverse(ans.begin(), ans.end());
+    //     return ans;
+    // }
+    //
+    // ans.clear();
+    // ans.push_back(x);
+    // int aux = parent[x];
+    // while (aux != x) {
+    //     ans.push_back(aux);
+    //     aux = parent[aux];
+    // }
+    // ans.push_back(x);
+    // return ans;
     return {};
 }
 
-std::vector<NodeID> extract_cycle_heuristic(NodeID from, const std::vector<NodeID> &parents) {
+std::vector<NodeID> change_cycle_ids(const Graph &g, const std::vector<NodeID> &cycle) {
+    // auto ans = cycle;
+    // for (auto &it:ans)
+    //     it = g.global_id[it];
+    //
+    // return ans;
     return {};
 }
-
-std::vector<NodeID> change_cycle_ids() {
-    return {};
-}
-/*
-void put_cycle_in_file(const NodeID &n, const NodeID &from, const std::vector<NodeID> &parents) {
-    std::vector<bool> seen(n, false);
-    std::vector<NodeID> cycle;
-    NodeID current_node = from;
-    while (parents[current_node] != -1 && !seen[current_node]) {
-        cycle.push_back(current_node);
-        seen[current_node] = true;
-        current_node = parents[current_node];
-    }
-    PRINT("CYCLE LENGHT = " << cycle.size());
-
-    if (parents[current_node] != -1) {
-        // we found a cycle here
-        int i;
-        for (i = 0; ; i++)
-            if (cycle[i] == current_node)
-                break;
-
-        cycle.erase(cycle.begin(), cycle.begin() + i);
-    }
-    cycle.push_back(current_node);
-
-    std::ofstream fout("cycle.txt");
-    fout << cycle.size() << '\n';
-    for (auto it:cycle)
-        fout << it << '\n';
-}
-
-void check_cycle_correctness(const Graph &graph) {
-    std::ifstream fin("cycle.txt");
-    NodeID l;
-    std::vector<NodeID> cycle;
-    fin >> l;
-    for (int i = 0; i < l; i++) {
-        NodeID node;
-        fin >> node;
-        cycle.push_back(node);
-    }
-
-    const Distances &d = bcf::runDijkstra(graph, cycle[l-1], c::infty, Orientation::OUT);
-
-    Distance cycle_length = d[cycle[0]];
-    for (int i = 0; i < l - 1; i++) {
-        Distance min_d = c::infty;
-        for (auto &edge:graph.getEdgesOf(cycle[i]))
-            if (edge.target == cycle[i+1])
-                min_d = std::min(min_d, edge.weight);
-
-        if (min_d == c::infty)
-            exit(-1);
-        cycle_length += min_d;
-    }
-
-    if (cycle_length >= 0){
-        PRINT("THE REPORTED CYCLE IS NOT NEGATIVE");
-        exit(-1);
-    }
-}
-*/

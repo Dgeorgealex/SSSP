@@ -754,6 +754,43 @@ std::optional<Distances> gor(Graph &G, std::variant<NodeID, const Distances *> s
     return dist;
 }
 
+std::vector<NodeID> gor_get_cycle(NodeID v, NodeID u, const Distances &dist, const Graph &graph) {
+    std::queue<NodeID> q;
+    std::vector<int> parent(graph.numberOfNodes(), -1);
+    std::vector<bool> visited(graph.numberOfNodes(), false);
+    std::vector<NodeID> ans;
+    q.push(v);
+    visited[v] = true;
+    while(!q.empty()){
+        NodeID from = q.front();
+        q.pop();
+
+        for(auto it:graph.getEdgesOf(from)) {
+            NodeID to = it.target;
+            if(dist[to] < c::infty && dist[from] + it.weight <= dist[to] && !visited[to]){
+                visited[to] = true;
+                parent[to] = from;
+
+                if(to == u)
+                    break;
+
+                q.push(to);
+            }
+        }
+
+        if(visited[u])
+            break;
+    }
+
+    int aux = u;
+    while(aux != -1){
+        ans.push_back(aux);
+        aux = parent[aux];
+    }
+
+    std::reverse(ans.begin(), ans.end());
+    return ans;
+}
 
 std::variant<Distances, std::vector<NodeID>> gor_with_cycles(Graph &G, std::variant<NodeID, const Distances *> source_pot) {
     NodeID n = G.numberOfNodes();
@@ -904,11 +941,11 @@ std::variant<Distances, std::vector<NodeID>> gor_with_cycles(Graph &G, std::vari
                         bool negative = (pot_edge_w + dist[u] < dist[v]);
 
                         if (scc[u] == scc[v] && negative)
-                            return std::vector<NodeID>{};
+                            return gor_get_cycle(v, u, dist, G);
 
                         if (scc[u] == 0) {
                             if (negative)
-                                return std::vector<NodeID>{};
+                                return gor_get_cycle(v, u, dist, G);
 
                             Current_T[v] = ++arc;
                             dfs.push_back(v);
