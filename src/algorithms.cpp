@@ -588,8 +588,57 @@ bool isResultCorrect(Graph const& graph, Distances const& distances, NodeID sour
 }
 
 std::vector<NodeID> close_cycle(const Graph &graph, const std::vector<NodeID> &cycle) {
-    // if (cycle.size() >= 2 && cycle.front() == cycle.back()) {
-    //     return {cycle.begin(), cycle.end() - 1};
-    // }
-    return {};
+    if (cycle.size() >= 2 && cycle.front() == cycle.back()) {
+        return {cycle.begin(), cycle.end() - 1};
+    }
+
+    NodeID n = graph.numberOfNodes();
+    Distances distances(n, c::infty);
+    std::vector<NodeID> parents(n, 0);
+    pad::GraphHeap q(n);
+
+    NodeID start = cycle.back();
+    NodeID end = cycle.front();
+    distances[start] = 0;
+    q.insert(start, 0);
+
+    bool found = false;
+    while (!q.empty()) {
+        Distance dist;
+        NodeID from;
+        q.deleteMin(from, dist);
+
+        if (from == end) {
+            found = true;
+            break;
+        }
+
+        if (dist > distances[from]) continue;
+
+        for (auto const &edge: graph.getEdgesOf(from)) {
+            auto tentative_dist = distances[from] + std::max(static_cast<Distance>(0), edge.weight);
+            if (tentative_dist < distances[edge.target]) {
+                parents[edge.target] = from;
+                distances[edge.target] = tentative_dist;
+                q.insert(edge.target, tentative_dist);
+            }
+        }
+    }
+
+    if (!found) {
+        PRINT("BUG6: THERE IS NO WAY TO CLOSE THE CYCLE");
+        exit(-1);
+    }
+
+    std::vector<NodeID> path;
+    end = parents[end];
+    while (end != start) {
+        path.push_back(end);
+        end = parents[end];
+    }
+
+    std::reverse(path.begin(), path.end());
+    auto result = cycle;
+    result.insert(result.end(), path.begin(), path.end());
+    return result;
 }

@@ -18,7 +18,7 @@ void init_feasible();
 
 Graph get_residual_graph();
 
-std::optional<std::vector<NodeID>> get_cycle(Graph &graph, SSSPAlg alg);
+std::optional<std::vector<NodeID> > get_cycle(Graph &graph, SSSPAlg alg);
 
 void cancel_cycle(std::vector<NodeID> cycle);
 
@@ -33,37 +33,44 @@ struct FlowNetwork {
     NodeID number_of_nodes = 0;
     std::vector<Distance> balance;
     std::vector<OrigEdge> edges;
-    std::vector<std::vector<EdgeID>> out_edges;
+    std::vector<std::vector<EdgeID> > out_edges;
 };
 
 FlowNetwork g_network;
 
 EdgeID find_edge_id(NodeID u, NodeID v) {
-    for (EdgeID id : g_network.out_edges[u]) {
+    for (EdgeID id: g_network.out_edges[u]) {
         if (g_network.edges[id].target == v) {
             return id;
         }
     }
     return static_cast<EdgeID>(-1);
 }
+
 int iterations;
 Distance old_cost = c::infty;
 
 void quick_correctness_check() {
     std::vector<Distance> check(g_network.number_of_nodes, 0);
     Distance cost = 0;
-    for (auto it:g_network.edges) {
+    for (auto it: g_network.edges) {
         check[it.source] -= it.flow;
         check[it.target] += it.flow;
         cost += it.flow;
     }
 
     for (int i = 0; i < g_network.number_of_nodes; ++i)
-        if (check[i] != g_network.balance[i])
+        if (check[i] != g_network.balance[i]) {
+            std::cout << "Bad relaxation\n";
+            std::cout.flush();
             exit(-1);
+        }
 
-    if (cost >= old_cost)
+    if (cost >= old_cost) {
+        std::cout << "Bad cost\n";
+        std::cout.flush();
         exit(-1);
+    }
 
     old_cost = cost;
 }
@@ -72,7 +79,7 @@ int main() {
     // First incremental step: parse and validate the instance format.
     read_graph("../data/Pictures/graph.txt");
     std::cout << "Loaded graph with " << g_network.number_of_nodes << " nodes and "
-              << g_network.edges.size() << " edges.\n";
+            << g_network.edges.size() << " edges.\n";
 
     init_feasible();
 
@@ -121,7 +128,7 @@ void read_graph(std::string filename) {
 void init_feasible() {
     const NodeID n = g_network.number_of_nodes;
 
-    for (auto &edge : g_network.edges) {
+    for (auto &edge: g_network.edges) {
         edge.flow = 0;
     }
 
@@ -130,14 +137,14 @@ void init_feasible() {
     const NodeID root = 0;
 
     // Undirected adjacency (assume for every u->v there exists v->u)
-    std::vector<std::vector<NodeID>> adj(n);
-    for (const auto &e : g_network.edges) {
+    std::vector<std::vector<NodeID> > adj(n);
+    for (const auto &e: g_network.edges) {
         adj[e.source].push_back(e.target);
         adj[e.target].push_back(e.source);
     }
 
     std::vector<NodeID> parent(n, n);
-    std::vector<std::vector<NodeID>> children(n);
+    std::vector<std::vector<NodeID> > children(n);
     std::vector<NodeID> order;
     std::vector<bool> visited(n, false);
 
@@ -145,9 +152,10 @@ void init_feasible() {
     q.push(root);
     visited[root] = true;
     while (!q.empty()) {
-        NodeID v = q.front(); q.pop();
+        NodeID v = q.front();
+        q.pop();
         order.push_back(v);
-        for (NodeID to : adj[v]) {
+        for (NodeID to: adj[v]) {
             if (visited[to]) continue;
             visited[to] = true;
             parent[to] = v;
@@ -157,11 +165,11 @@ void init_feasible() {
     }
 
     std::vector<Distance> current_balance = g_network.balance;
-    for (unsigned long v : std::views::reverse(order)) {
-        for (auto c : children[v]) {
+    for (unsigned long v: std::views::reverse(order)) {
+        for (auto c: children[v]) {
             if (current_balance[c] < 0) {
                 EdgeID id = find_edge_id(c, v);
-                g_network.edges[id].flow = - current_balance[c];
+                g_network.edges[id].flow = -current_balance[c];
             } else if (current_balance[c] > 0) {
                 EdgeID id = find_edge_id(v, c);
                 g_network.edges[id].flow = current_balance[c];
@@ -172,7 +180,7 @@ void init_feasible() {
     }
 }
 
-Graph get_residual_graph(){
+Graph get_residual_graph() {
     // Build a residual graph: forward arcs (u->v) with cost = +orig.cost
     // and reverse arcs (v->u) with cost = -orig.cost if flow > 0.
     const NodeID n = g_network.number_of_nodes;
@@ -193,28 +201,28 @@ Graph get_residual_graph(){
     return Graph(n, edges);
 }
 
-std::optional<std::vector<NodeID>> get_cycle(Graph &graph, SSSPAlg alg){
-    // MEASUREMENT::start(EXP::INNER_LOOP_ALL);
-    // auto result1 = PADSCALING(graph, 0);
-    // MEASUREMENT::stop(EXP::INNER_LOOP_ALL);
-    // std::cout << "PAD: \n";
-    // MEASUREMENT::print(EXP::INNER_LOOP_ALL);
-    // MEASUREMENT::reset(EXP::INNER_LOOP_ALL);
-
+std::optional<std::vector<NodeID> > get_cycle(Graph &graph, SSSPAlg alg) {
     MEASUREMENT::start(EXP::INNER_LOOP_ALL);
-    auto result2 = gor_with_cycles(graph, static_cast<NodeID>(0));
+    auto result1 = PADSCALING(graph, 0);
     MEASUREMENT::stop(EXP::INNER_LOOP_ALL);
-    std::cout << "GOR: \n";
+    std::cout << "PAD: \n";
     MEASUREMENT::print(EXP::INNER_LOOP_ALL);
     MEASUREMENT::reset(EXP::INNER_LOOP_ALL);
 
-    if(std::holds_alternative<Distances>(result2))
+    // MEASUREMENT::start(EXP::INNER_LOOP_ALL);
+    // auto result2 = gor_with_cycles(graph, static_cast<NodeID>(0));
+    // MEASUREMENT::stop(EXP::INNER_LOOP_ALL);
+    // std::cout << "GOR: \n";
+    // MEASUREMENT::print(EXP::INNER_LOOP_ALL);
+    // MEASUREMENT::reset(EXP::INNER_LOOP_ALL);
+
+    if (std::holds_alternative<Distances>(result1))
         return {};
 
     // if (std::holds_alternative<Distances>(result1))
     //     exit(-1);
 
-    return std::get<std::vector<NodeID>>(result2);
+    return std::get<std::vector<NodeID> >(result1);
 }
 
 void cancel_cycle(std::vector<NodeID> cycle) {
@@ -224,7 +232,7 @@ void cancel_cycle(std::vector<NodeID> cycle) {
     const Distance INF = std::numeric_limits<Distance>::max() / 4;
 
     // For each residual arc in the cycle store (orig_edge_id, is_forward)
-    std::vector<std::pair<EdgeID, bool>> arc_info(k);
+    std::vector<std::pair<EdgeID, bool> > arc_info(k);
     Distance bottleneck = INF;
 
     for (size_t i = 0; i < k; ++i) {
@@ -241,13 +249,10 @@ void cancel_cycle(std::vector<NodeID> cycle) {
             arc_info[i] = {fwd, true};
         } else {
             // malformed cycle w.r.t. original graph
+            std::cout << "Malformed cycle";
+            std::cout.flush();
             exit(-1);
         }
-    }
-
-    if (bottleneck == INF) {
-        // Cycle contains no finite-cap reverse arcs; nothing to augment safely
-        exit(-2);
     }
 
     // Apply augmentation of size `bottleneck`
@@ -269,8 +274,5 @@ void cancel_cycle(std::vector<NodeID> cycle) {
 
     quick_correctness_check();
 
-    std::cout << iterations << ' ' << cycle.size() <<  ' ' << better << ' ' << bottleneck << '\n';
-
-    if(better <= 0)
-        exit(-3);
+    std::cout << iterations << ' ' << cycle.size() << ' ' << better << ' ' << bottleneck << '\n';
 }

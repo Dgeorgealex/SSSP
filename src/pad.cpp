@@ -563,7 +563,7 @@ std::variant<Distances, std::vector<NodeID>> pad::runLazyDijkstra(const Graph &g
     NodeID n = graph.numberOfNodes();
     Distances distance(n, c::infty);
     Distances positive(n, 0);
-    std::vector<int> parent(n, 0);
+    std::vector<NodeID> parent(n, n + 1);
     std::vector<NodeID> cnt(n, 0);
     std::vector<NodeID> bellman_phase;
     GraphHeap q(n);
@@ -837,39 +837,39 @@ void symmetric_graph(const Graph &graph) {
     }
 }
 
-std::vector<NodeID> extract_cycle(NodeID from, const std::vector<int> &parent) {
-    // int x = from;
-    // std::vector<NodeID>ans;
-    // int cnt = 0;
-    // while (x != -1) {
-    //     ans.push_back(x);
-    //     x = parent[x];
-    //     cnt++;
-    //     if (cnt > parent.size())
-    //         break;
-    // }
-    // if (x == -1) {
-    //     std::reverse(ans.begin(), ans.end());
-    //     return ans;
-    // }
-    //
-    // ans.clear();
-    // ans.push_back(x);
-    // int aux = parent[x];
-    // while (aux != x) {
-    //     ans.push_back(aux);
-    //     aux = parent[aux];
-    // }
-    // ans.push_back(x);
-    // return ans;
-    return {};
+std::vector<NodeID> extract_cycle(NodeID from, const std::vector<NodeID> &parent) {
+    NodeID x = from;
+    const NodeID n = parent.size();
+    std::vector<NodeID> ans;
+    int cnt = 0;
+    while (x != n + 1) {
+        ans.push_back(x);
+        x = parent[x];
+        cnt++;
+        if (cnt > n)
+            break;
+    }
+    if (x == n + 1) {
+        std::reverse(ans.begin(), ans.end());
+        return ans;
+    }
+
+    ans.clear();
+    ans.push_back(x);
+    NodeID aux = parent[x];
+    while (aux != x) {
+        ans.push_back(aux);
+        aux = parent[aux];
+    }
+    ans.push_back(x);
+    std::reverse(ans.begin(), ans.end());
+    return ans;
 }
 
 std::vector<NodeID> change_cycle_ids(const Graph &g, const std::vector<NodeID> &cycle) {
-    // auto ans = cycle;
-    // for (auto &it:ans)
-    //     it = g.global_id[it];
-    //
-    // return ans;
-    return {};
+    auto ans = cycle;
+    for (auto &it: ans)
+        it = g.global_id[it];
+
+    return ans;
 }
