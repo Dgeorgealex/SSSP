@@ -5,6 +5,7 @@
 #include "measurement_tool.h"
 
 #include <cstdlib>
+#include <fstream>
 #include <list>
 #include <optional>
 
@@ -488,6 +489,13 @@ std::optional<Distances> computeSSSP(
             auto result =  PADSCALING(graph, source);
             if (std::holds_alternative<Distances>(result))
                 return std::get<Distances>(result);
+
+            // I want to print it
+            auto cycle = std::get<std::vector<NodeID>>(result);
+            std::ofstream fout("cycle.txt");
+            fout << cycle.size() << '\n';
+            for (auto it:cycle)
+                fout << it << ' ';
             return {};
         }
         default:
