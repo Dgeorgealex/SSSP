@@ -116,7 +116,7 @@ def plot_group_overlay(
         run_cols = [c for c in group.columns if re.match(r"^v\d+$", c)]
         if not run_cols:
             # fall back to explicit v1..v3 if none detected
-            run_cols = [c for c in ["v1", "v2", "v3"] if c in group.columns]
+            run_cols = [c for c in ["v1", "v2", "v3", "v4", "v5"] if c in group.columns]
 
         if not run_cols:
             continue
@@ -216,7 +216,7 @@ def plot_group_overlay(
 
 def load_groups(csv_path: Path) -> dict[tuple[str, str], pd.DataFrame]:
     df = pd.read_csv(csv_path)
-    required = {"graph_name", "v1", "v2", "v3"}
+    required = {"graph_name", "v1", "v2", "v3", "v4", "v5"}
     missing = required.difference(df.columns)
     if missing:
         raise ValueError(f"Missing required columns: {', '.join(sorted(missing))}")
@@ -232,6 +232,8 @@ def load_groups(csv_path: Path) -> dict[tuple[str, str], pd.DataFrame]:
                 "v1": pd.to_numeric(row["v1"], errors="coerce"),
                 "v2": pd.to_numeric(row["v2"], errors="coerce"),
                 "v3": pd.to_numeric(row["v3"], errors="coerce"),
+                "v4": pd.to_numeric(row["v4"], errors="coerce"),
+                "v5": pd.to_numeric(row["v5"], errors="coerce"),
             }
         )
 
@@ -243,15 +245,15 @@ def load_groups(csv_path: Path) -> dict[tuple[str, str], pd.DataFrame]:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Plot v1/v2/v3 results from a CSV")
+    parser = argparse.ArgumentParser(description="Plot v1/v2/v3/v4/v5 results from a CSV")
     parser.add_argument(
         "--input",
-        default="../data/plots/Raport/PAD",
-        help="Input CSV with graph_name,v1,v2,v3",
+        default="../data/plots/All5/time_results_padscaling_5.csv",
+        help="Input CSV with graph_name,v1,v2,v3,v4,v5",
     )
     parser.add_argument(
         "--output-dir",
-        default="../data/plots/Raport_GORC_no_BCF",
+        default="../data/plots/All5",
         help="Directory for generated PDFs",
     )
     parser.add_argument(
