@@ -318,7 +318,7 @@ std::variant<Distances, std::vector<NodeID>> PADSCALING(Graph &graph, NodeID sou
         working_graph.addWeight((-minW + (config::pad_scaling_factor - 1))/config::pad_scaling_factor);
 
         //TODO remove check //////////////////////////////////////////////////////////////////////////////////////////////
-        symmetric_graph(working_graph);
+        // symmetric_graph(working_graph);
         ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
         Distances potential(n);

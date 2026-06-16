@@ -130,16 +130,16 @@ std::pair<int, int> grow_ball_heavy(const Graph &graph, Distance diameter, std::
 
 
     //TODO remove check //////////////////////////////////////////////////////////////////////////////////////////////
-    if (volumes[start] < graph.numberOfEdges() || d[order[end]] > diameter / 5 + 1) {
-        PRINT("INCORRECT HEAVY LIMITS");
-        exit(-1);
-    }
-    std::vector<bool> u(n, false), pad(n, false);
-    for (int i = 1; i <= start; i++)
-        u[order[i]] = pad[order[i]] = true;
-    for (int i = start + 1; i <= end; i++)
-        pad[order[i]] = true;
-    padding_check(graph, u, pad, diameter, orientation);
+    // if (volumes[start] < graph.numberOfEdges() || d[order[end]] > diameter / 5 + 1) {
+    //     PRINT("INCORRECT HEAVY LIMITS");
+    //     exit(-1);
+    // }
+    // std::vector<bool> u(n, false), pad(n, false);
+    // for (int i = 1; i <= start; i++)
+    //     u[order[i]] = pad[order[i]] = true;
+    // for (int i = start + 1; i <= end; i++)
+    //     pad[order[i]] = true;
+    // padding_check(graph, u, pad, diameter, orientation);
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -266,14 +266,14 @@ std::vector<Graph> padded_decomposition(Graph &graph, Distance diameter) {
             }
 
             //TODO remove check ////////////////////////////////////////////////////////////////////////////////////////
-            if (ball_plus && d_plus[order_plus[start_plus]] > diameter / 10) {
-                PRINT("WRONG SMALL LIMIT");
-                exit(-1);
-            }
-            if (ball_minus && d_minus[order_minus[start_minus]] > diameter / 10) {
-                PRINT("WRONG SMALL LIMIT");
-                exit(-1);
-            }
+            // if (ball_plus && d_plus[order_plus[start_plus]] > diameter / 10) {
+            //     PRINT("WRONG SMALL LIMIT");
+            //     exit(-1);
+            // }
+            // if (ball_minus && d_minus[order_minus[start_minus]] > diameter / 10) {
+            //     PRINT("WRONG SMALL LIMIT");
+            //     exit(-1);
+            // }
             ////////////////////////////////////////////////////////////////////////////////////////////////////////////
             if (ball_plus && ball_minus)
                 break;
@@ -396,14 +396,14 @@ std::vector<Graph> padded_decomposition(Graph &graph, Distance diameter) {
         pad = std::move(pad_plus);
         PRINT("LIGHT - PLUS");
         //TODO remove check ////////////////////////////////////////////////////////////////////////////////////////////
-        padding_check(graph, u, pad, diameter, Orientation::OUT);
+        // padding_check(graph, u, pad, diameter, Orientation::OUT);
         ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     } else {
         u = std::move(u_minus);
         pad = std::move(pad_minus);
         PRINT("LIGHT - MINUS");
         //TODO remove check ////////////////////////////////////////////////////////////////////////////////////////////
-        padding_check(graph, u, pad, diameter, Orientation::IN);
+        // padding_check(graph, u, pad, diameter, Orientation::IN);
         ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     }
 
@@ -669,19 +669,19 @@ std::variant<Distances, std::vector<NodeID>> pad::runLazyDijkstra(const Graph &g
         rounds++;
 
         //TODO remove check //////////////////////////////////////////////////////////////////////////////////////////////
-        if (rounds % 5 == 0) {
-            Distance maxx = 0;
-            for (NodeID v = 0; v < n; v++)
-                maxx = std::max(maxx, positive[v]);
-
-            if (maxx - prev < diameter / config::pad_rounds && n > config::pad_small) {
-                PRINT("    SMALL DELTA");
-                PRINT("    round = " << rounds);
-                PRINT("    maxx - prev = " << maxx - prev);
-                PRINT("    diameter / pad_rounds = " << diameter / config::pad_rounds);
-            }
-            prev = maxx;
-        }
+        // if (rounds % 5 == 0) {
+        //     Distance maxx = 0;
+        //     for (NodeID v = 0; v < n; v++)
+        //         maxx = std::max(maxx, positive[v]);
+        //
+        //     if (maxx - prev < diameter / config::pad_rounds && n > config::pad_small) {
+        //         PRINT("    SMALL DELTA");
+        //         PRINT("    round = " << rounds);
+        //         PRINT("    maxx - prev = " << maxx - prev);
+        //         PRINT("    diameter / pad_rounds = " << diameter / config::pad_rounds);
+        //     }
+        //     prev = maxx;
+        // }
         ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     }
 

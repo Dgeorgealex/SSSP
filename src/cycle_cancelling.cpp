@@ -16,6 +16,8 @@ void read_graph(std::string filename);
 
 void init_feasible();
 
+void save_checkpoint(int iteration);
+
 Graph get_residual_graph();
 
 std::optional<std::vector<NodeID> > get_cycle(Graph &graph, SSSPAlg alg);
@@ -75,6 +77,28 @@ void quick_correctness_check() {
     old_cost = cost;
 }
 
+void save_checkpoint(int iteration) {
+    const std::string filename = "../data/Pictures/checkpoints/graph_" + std::to_string(iteration) + ".txt";
+    std::ofstream out(filename);
+    if (!out) {
+        std::cout << "Could not open checkpoint file\n";
+        std::cout.flush();
+        return;
+    }
+    Distance cost = 0;
+    for (auto it: g_network.edges)
+        cost += it.flow;
+
+    out << cost << '\n';
+    out << g_network.number_of_nodes << ' ' << g_network.edges.size() << '\n';
+
+    for (NodeID v = 0; v < g_network.number_of_nodes; ++v)
+        out << g_network.balance[v] << (v + 1 == g_network.number_of_nodes ? '\n' : ' ');
+
+    for (const auto &edge: g_network.edges)
+        out << edge.source << ' ' << edge.target << ' ' << edge.cost << ' ' << edge.flow << '\n';
+}
+
 int main() {
     // First incremental step: parse and validate the instance format.
     read_graph("../data/Pictures/graph.txt");
@@ -86,6 +110,9 @@ int main() {
     quick_correctness_check();
 
     while (true) {
+        if (iterations > 100000)
+            exit(0);
+        
         iterations++;
         auto graph = get_residual_graph();
         auto cycle = get_cycle(graph, SSSPAlg::PADSCALING);
@@ -134,7 +161,7 @@ void init_feasible() {
 
     if (n == 0) return;
 
-    const NodeID root = 0;
+    const NodeID root = (512 / 2) * 512 + 512 / 2;
 
     // Undirected adjacency (assume for every u->v there exists v->u)
     std::vector<std::vector<NodeID> > adj(n);
@@ -205,22 +232,19 @@ std::optional<std::vector<NodeID> > get_cycle(Graph &graph, SSSPAlg alg) {
     MEASUREMENT::start(EXP::INNER_LOOP_ALL);
     auto result1 = PADSCALING(graph, 0);
     MEASUREMENT::stop(EXP::INNER_LOOP_ALL);
-    std::cout << "PAD: \n";
+    std::cout << "PAD: ";
     MEASUREMENT::print(EXP::INNER_LOOP_ALL);
     MEASUREMENT::reset(EXP::INNER_LOOP_ALL);
 
-    // MEASUREMENT::start(EXP::INNER_LOOP_ALL);
-    // auto result2 = gor_with_cycles(graph, static_cast<NodeID>(0));
-    // MEASUREMENT::stop(EXP::INNER_LOOP_ALL);
-    // std::cout << "GOR: \n";
-    // MEASUREMENT::print(EXP::INNER_LOOP_ALL);
-    // MEASUREMENT::reset(EXP::INNER_LOOP_ALL);
+    MEASUREMENT::start(EXP::INNER_LOOP_ALL);
+    auto result2 = gor_with_cycles(graph, static_cast<NodeID>(0));
+    MEASUREMENT::stop(EXP::INNER_LOOP_ALL);
+    std::cout << "GOR: ";
+    MEASUREMENT::print(EXP::INNER_LOOP_ALL);
+    MEASUREMENT::reset(EXP::INNER_LOOP_ALL);
 
     if (std::holds_alternative<Distances>(result1))
         return {};
-
-    // if (std::holds_alternative<Distances>(result1))
-    //     exit(-1);
 
     return std::get<std::vector<NodeID> >(result1);
 }
@@ -274,5 +298,7 @@ void cancel_cycle(std::vector<NodeID> cycle) {
 
     quick_correctness_check();
 
-    std::cout << iterations << ' ' << cycle.size() << ' ' << better << ' ' << bottleneck << '\n';
+    if (iterations % 100 == 0) {
+        save_checkpoint(iterations);
+    }
 }
