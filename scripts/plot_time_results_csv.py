@@ -105,7 +105,7 @@ def plot_group_overlay(
     grouped_series: dict[str, pd.DataFrame], family: str, tag: str, output_dir: Path
 ) -> Path:
     fig, ax = plt.subplots(figsize=(6, 5))
-    colors = ["tab:orange", "tab:green", "tab:blue", "tab:red", "tab:purple"]
+    colors = list(plt.get_cmap("tab10").colors[:8])
 
     title_tag = "original" if tag == "nothing" else tag
     plotted_any = False
